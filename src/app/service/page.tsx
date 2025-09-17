@@ -16,13 +16,13 @@ export default function ServicePage() {
   });
 
   useEffect(() => {
-    // AOS init (client-only)
-    (async () => {
-      const mod = await import("aos");
-      await import("aos/dist/aos.css");
-      mod.default.init({ once: true, duration: 900 });
-    })();
-  }, []);
+  (async () => {
+    const mod = await import("aos");
+    await import("aos/dist/aos.css");
+    mod.default.init({ once: true, duration: 900 });
+  })();
+}, []);
+
 
   const handleChange = (
     e:

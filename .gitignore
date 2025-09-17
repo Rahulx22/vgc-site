@@ -1,41 +1,40 @@
-# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
+# Dependencies
+node_modules/
+.pnpm-store/
 
-# dependencies
-/node_modules
-/.pnp
-.pnp.*
-.yarn/*
-!.yarn/patches
-!.yarn/plugins
-!.yarn/releases
-!.yarn/versions
+# Next.js / Turbopack
+.next/
+.turbo/
+out/
+.next-static/
 
-# testing
-/coverage
+# Build outputs
+build/
+dist/
+coverage/
 
-# next.js
-/.next/
-/out/
+# Env files
+.env
+.env.*
+!.env.example
 
-# production
-/build
-
-# misc
+# OS / Editor
 .DS_Store
-*.pem
+*.log
+*.log*
+.npmrc
+.yarnrc*
+.idea/
+.vscode/
 
-# debug
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-.pnpm-debug.log*
+# Misc
+.vercel/
+.next-cache/
+*.swp
+*.swo
 
-# env files (can opt-in for committing if needed)
-.env*
-
-# vercel
-.vercel
-
-# typescript
-*.tsbuildinfo
-next-env.d.ts
+# Locks (keep one lockfile committed if you use it)
+# Uncomment to ignore lockfiles
+# package-lock.json
+# yarn.lock
+# pnpm-lock.yaml
