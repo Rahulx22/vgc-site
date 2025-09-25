@@ -52,6 +52,8 @@ export type HomeData = {
   services: Service[];
   blog: BlogItem[];
   clients: ClientItem[];
+  clientsTitle?: string;
+  clientsSubtitle?: string;
   testimonials: Testimonial[];
   footer: FooterData;
 };

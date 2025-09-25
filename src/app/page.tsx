@@ -63,6 +63,8 @@ function mapApiToHomeDataStrict(apiJson: any): HomeData {
     title: c.title || "",
     icon: ensureUrl(c.logo),
   }));
+  const clientsTitle = clientsBlock?.data?.title || "";
+  const clientsSubtitle = clientsBlock?.data?.subtitle || "";
 
   // Testimonials
   const testimonialsBlock = blocks.find((b: any) => b.type === "testimonials_section");
@@ -84,6 +86,8 @@ function mapApiToHomeDataStrict(apiJson: any): HomeData {
     services,
     blog,
     clients,
+    clientsTitle,
+    clientsSubtitle,
     testimonials,
     footer,
   } as HomeData;
@@ -134,7 +138,7 @@ export default async function Page() {
       <HeroCarousel hero={data.hero} />
       <Services services={data.services} />
       <Blog items={data.blog} />
-      <Clients items={data.clients} />
+      <Clients items={data.clients} title={data.clientsTitle} subtitle={data.clientsSubtitle} />
       <Testimonials items={data.testimonials} />
 
       <div className="ready-sec">
