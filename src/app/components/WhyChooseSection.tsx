@@ -1,3 +1,5 @@
+"use client";
+
 import Image from "next/image";
 import React from "react";
 
@@ -14,11 +16,19 @@ interface WhyChooseSectionProps {
 
 export default function WhyChooseSection({ title, features }: WhyChooseSectionProps) {
   if (!Array.isArray(features) || features.length === 0) {
-    console.warn("WhyChooseSection: no features provided or invalid features", { features });
     return null;
   }
 
-  const fallback = "/images/abt-icon.webp"; 
+  const fallbackIcons = [
+    "/images/abt-icon.webp",
+    "/images/abt-icon1.webp", 
+    "/images/abt-icon2.webp",
+    "/images/abt-icon3.webp"
+  ];
+
+  const getFallbackIcon = (index: number) => {
+    return fallbackIcons[index % fallbackIcons.length] || "/images/icon.webp";
+  }; 
 
   return (
     <div className="why-sec">
@@ -30,18 +40,25 @@ export default function WhyChooseSection({ title, features }: WhyChooseSectionPr
           {features.map((feature, index) => (
             <div
               key={index}
-              className="col-lg-3 col-md-6"
+              className="col-lg-3 col-md-6 text-center"
               data-aos={index % 2 === 0 ? "fade-down" : "fade-up"}
               data-aos-duration="1200"
             >
-              <Image
-                src={feature.icon || fallback}
-                alt={`${feature.title} icon`}
-                width={150}
-                height={150}
-                loading="lazy"
-                unoptimized
-              />
+              <div className="d-flex justify-content-center mb-3">
+                <Image
+                  src={feature.icon || getFallbackIcon(index)}
+                  alt={`${feature.title} icon`}
+                  width={150}
+                  height={150}
+                  loading="lazy"
+                  unoptimized
+                  onError={(e) => {
+                    const fallbackSrc = getFallbackIcon(index);
+                    console.warn(`Icon failed to load for "${feature.title}": ${feature.icon}`);
+                    (e.target as HTMLImageElement).src = fallbackSrc;
+                  }}
+                />
+              </div>
               <h3>{feature.title}</h3>
               <p>{feature.description}</p>
             </div>

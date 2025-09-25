@@ -10,7 +10,6 @@ const nextConfig: NextConfig = {
     ignoreBuildErrors: true,
   },
   images: {
-    domains: ["vgc.psofttechnologies.in"],
     remotePatterns: [
       {
         protocol: "https",

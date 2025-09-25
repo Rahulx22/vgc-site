@@ -40,7 +40,8 @@ export default function TeamSection({ title, members }: TeamSectionProps) {
                 alt={member.name} 
                 width={400} 
                 height={400} 
-                loading="lazy" 
+                loading="lazy"
+                unoptimized
               />
               <h3>{member.name}</h3>
               <a href="#" onClick={(e) => { e.preventDefault(); openModal(member); }}>

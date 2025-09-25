@@ -63,7 +63,8 @@ export default function AboutSection({
               alt={imageAlt} 
               width={700} 
               height={400} 
-              loading="lazy" 
+              loading="lazy"
+              unoptimized
             />
           </div>
         </div>

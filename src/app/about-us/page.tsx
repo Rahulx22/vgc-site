@@ -6,6 +6,7 @@ import InnerBanner from "./../components/InnerBanner";
 import AboutSection from "./../components/AboutSection";
 import WhyChooseSection from "./../components/WhyChooseSection";
 import TeamSection from "./../components/TeamSection";
+import { ensureUrl } from "../../lib/api";
 
 type ApiResponse = {
   success: boolean;
@@ -20,19 +21,6 @@ type ApiResponse = {
 };
 
 const API_URL = "https://vgc.psofttechnologies.in/api/v1/pages";
-const STORAGE_BASE = "https://vgc.psofttechnologies.in/storage/";
-
-function mkImage(path?: string | null) {
-  if (!path) return null;
-
-  if (path.startsWith("http://") || path.startsWith("https://")) return path;
-
-  const clean = path.replace(/^\/+/, "");
-
-  const withBuilder = clean.startsWith("builder/") ? clean : `builder/${clean}`;
-
-  return `${STORAGE_BASE}${withBuilder}`;
-}
 
 function splitParagraphs(text?: string | null) {
   if (!text) return [];
@@ -49,10 +37,35 @@ async function fetchAboutPage() {
   }
   const payload = (await res.json()) as ApiResponse;
 
-  const aboutPage = payload.data.find((p) => p.type === "about" || p.slug === "about");
-  if (!aboutPage) return null;
+  // Look for about page with different possible identifiers
+  // First try to find any page that has the blocks we need
+  let aboutPage = payload.data.find((p) => 
+    p.type === "about" || 
+    p.slug === "about" || 
+    p.slug === "about-us" ||
+    p.title?.toLowerCase().includes("about")
+  );
+  
+  // If no specific about page found, try to find any page with about_section block
+  if (!aboutPage) {
+    aboutPage = payload.data.find((p) => 
+      Array.isArray(p.blocks) && p.blocks.some((b: any) => b.type === "about_section")
+    );
+  }
+  
+  // If still not found, use the first page with blocks
+  if (!aboutPage && payload.data.length > 0) {
+    aboutPage = payload.data.find((p) => Array.isArray(p.blocks) && p.blocks.length > 0);
+  }
+  
+  if (!aboutPage) {
+    return null;
+  }
 
-  const getBlock = (type: string) => aboutPage.blocks.find((b) => b.type === type)?.data ?? null;
+  const getBlock = (type: string) => {
+    const block = aboutPage.blocks.find((b) => b.type === type);
+    return block?.data ?? null;
+  };
 
   const bannerBlock = getBlock("banner_slider_section");
   const banner = (bannerBlock?.banners && bannerBlock.banners[0]) || null;
@@ -61,14 +74,14 @@ async function fetchAboutPage() {
     subtitle: banner?.subtitle ?? "",
     ctaText: banner?.cta_text ?? null,
     ctaLink: banner?.cta_link ?? null,
-    image: mkImage(banner?.image ?? bannerBlock?.image ?? null),
+    image: (banner?.image ?? bannerBlock?.image) ? ensureUrl(banner?.image ?? bannerBlock?.image) : null,
   };
 
   const aboutBlock = getBlock("about_section");
   const about = {
     title: aboutBlock?.left_heading ?? aboutBlock?.heading ?? "About Us",
     paragraphs: splitParagraphs(aboutBlock?.left_description ?? aboutBlock?.description),
-    image: mkImage(aboutBlock?.right_image ?? aboutBlock?.right_image),
+    image: aboutBlock?.right_image ? ensureUrl(aboutBlock?.right_image) : null,
   };
 
   const whyBlock = getBlock("why_choose_us_section");
@@ -76,19 +89,23 @@ async function fetchAboutPage() {
     title: whyBlock?.heading ?? "Why Choose",
     subtitle: whyBlock?.subtext ?? "VGC Advisors",
     features:
-      Array.isArray(whyBlock?.items) &&
-      whyBlock.items.map((it: any) => ({
-        icon: mkImage(it.icon),
-        title: it.title,
-        description: it.description,
-      })) || [],
+      Array.isArray(whyBlock?.items) ?
+      whyBlock.items.map((it: any) => {
+        // Use proper fallback logic as per memory
+        const iconUrl = it.icon ? ensureUrl(it.icon) : "/images/icon.webp";
+        return {
+          icon: iconUrl,
+          title: it.title || 'Untitled',
+          description: it.description || '',
+        };
+      }) : [],
   };
 
   const believeBlock = getBlock("what_we_believe_section");
   const beliefs = {
     title: believeBlock?.right_title ?? "What We Believe In",
     paragraphs: splitParagraphs(believeBlock?.right_description),
-    image: mkImage(believeBlock?.left_image ?? believeBlock?.right_image ?? null),
+    image: (believeBlock?.left_image ?? believeBlock?.right_image) ? ensureUrl(believeBlock?.left_image ?? believeBlock?.right_image) : null,
     ctaText: believeBlock?.right_cta_text ?? null,
     ctaLink: believeBlock?.right_cta_link ?? null,
   };
@@ -100,7 +117,7 @@ async function fetchAboutPage() {
       Array.isArray(teamBlock?.members) &&
       teamBlock.members.map((m: any) => ({
         name: m.name,
-        image: mkImage(m.photo ?? m.image),
+        image: (m.photo ?? m.image) ? ensureUrl(m.photo ?? m.image) : "/images/team-img.webp",
         bio: m.description ?? m.bio ?? "",
       })) || [],
   };
@@ -109,7 +126,7 @@ async function fetchAboutPage() {
   const globalPresence = {
     title: globalBlock?.left_title ?? "Global Presence",
     paragraphs: splitParagraphs(globalBlock?.left_description),
-    image: mkImage(globalBlock?.right_image),
+    image: globalBlock?.right_image ? ensureUrl(globalBlock?.right_image) : null,
   };
 
   const ctaBlock = getBlock("cta_section");
@@ -132,7 +149,7 @@ async function fetchAboutPage() {
   };
 }
 
-export default async function AboutPage(): Promise<JSX.Element> {
+export default async function AboutPage() {
   const data = await fetchAboutPage();
 
   if (!data) {
@@ -158,14 +175,14 @@ export default async function AboutPage(): Promise<JSX.Element> {
           { label: "Home", href: "/" },
           { label: data.banner.title, href: "/about" },
         ]}
-        image={data.banner.image ?? "/images/about-banner.webp"}
+        image={data.banner.image || "/images/about-banner.webp"}
         alt="about-banner"
       />
 
       <AboutSection
         title={data.about.title}
         paragraphs={data.about.paragraphs}
-        image={data.about.image ?? "/images/about-img.webp"}
+        image={data.about.image || "/images/about-img.webp"}
         imageAlt="about-img"
       />
 
@@ -174,7 +191,7 @@ export default async function AboutPage(): Promise<JSX.Element> {
       <AboutSection
         title={data.beliefs.title}
         paragraphs={data.beliefs.paragraphs}
-        image={data.beliefs.image ?? "/images/about-img1.webp"}
+        image={data.beliefs.image || "/images/about-img1.webp"}
         imageAlt="about-img1"
         reverse={true}
         className="dd"
@@ -185,7 +202,7 @@ export default async function AboutPage(): Promise<JSX.Element> {
       <AboutSection
         title={data.globalPresence.title}
         paragraphs={data.globalPresence.paragraphs}
-        image={data.globalPresence.image ?? "/images/about-img.webp"}
+        image={data.globalPresence.image || "/images/about-img.webp"}
         imageAlt="about-img"
       />
 
