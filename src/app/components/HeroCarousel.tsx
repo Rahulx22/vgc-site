@@ -41,8 +41,8 @@ export default function HeroCarousel({ hero }: { hero: Hero }) {
                         <p key={i}>{p}</p>
                       ))}
 
-                      <a className="call-btn" href={`tel:${hero.phone}`}>
-                        Make a Call {hero.phone}
+                      <a className="call-btn" href={`tel:${hero.cta_link}`}>
+                        {hero.phone}
                       </a>
 
                       <ul className="count-list">

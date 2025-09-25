@@ -2,7 +2,22 @@ import Link from "next/link";
 import Image from "next/image";
 import { Service } from "../../types/home";
 
-export default function Services({ services }: { services: Service[] }) {
+interface ServiceOffering {
+  title?: string;
+  subtitle?: string;
+  description?: string;
+  items: {
+    title: string;
+    description: string;
+  }[];
+}
+
+interface ServicesProps {
+  services: Service[];
+  offerings?: ServiceOffering[];
+}
+
+export default function Services({ services, offerings }: ServicesProps) {
   return (
     <div className="service-sec">
       <div className="container">
@@ -39,8 +54,8 @@ export default function Services({ services }: { services: Service[] }) {
               Our Services
             </h2>
             <div className="row">
-              {services.map((s, i) => (
-                <div key={i} className="col-lg-6 col-md-6">
+              {services.map((s) => (
+                <div key={s.id || s.title} className="col-lg-6 col-md-6">
                   <div
                     className="serv-box"
                     data-aos="zoom-in"
@@ -67,11 +82,37 @@ export default function Services({ services }: { services: Service[] }) {
             </div>
 
             {/* See All Services */}
-            <Link href="/service.html" className="see-btn">
+            <Link href="/service" className="see-btn">
               See All Services
             </Link>
           </div>
         </div>
+
+        {/* Detailed Service Offerings - Business Support Style */}
+        {offerings && offerings.length > 0 && (
+          <div className="row">
+            <div className="col-xl-10 col-lg-12 col-md-12 offset-xl-1">
+              <div className="business-box" data-aos="fade-up" data-aos-duration="1200">
+                {offerings.map((offering, index) => (
+                  <div key={index}>
+                    {offering.title && <h2>{offering.title}</h2>}
+                    {offering.subtitle && <h3>{offering.subtitle}</h3>}
+                    {offering.description && <p>{offering.description}</p>}
+                    {offering.items.length > 0 && (
+                      <ul>
+                        {offering.items.map((item, itemIndex) => (
+                          <li key={itemIndex}>
+                            <strong>{item.title}</strong> {item.description}
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

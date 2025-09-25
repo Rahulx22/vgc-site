@@ -16,9 +16,11 @@ export type Hero = {
 };
 
 export type Service = {
+  id: string;
   title: string;
   desc: string;
   link: string;
+  image: string;
 };
 
 export type BlogItem = {
@@ -38,6 +40,14 @@ export type Testimonial = {
   text: string;
   author: string;
   avatar: string;
+  rating?: string;
+};
+
+export type TestimonialsSection = {
+  items: Testimonial[];
+  left_text: string;
+  right_text: string;
+  right_subtext: string;
 };
 
 export type FooterData = {
@@ -47,13 +57,31 @@ export type FooterData = {
   copyright?: string;
 };
 
+export type CtaSection = {
+  subtext: string;
+  cta_link: string;
+  cta_text: string;
+  top_heading: string;
+  main_heading: string;
+};
+
 export type HomeData = {
   hero: Hero;
   services: Service[];
+  serviceOfferings?: {
+    title?: string;
+    subtitle?: string;
+    description?: string;
+    items: {
+      title: string;
+      description: string;
+    }[];
+  }[];
   blog: BlogItem[];
   clients: ClientItem[];
   clientsTitle?: string;
   clientsSubtitle?: string;
-  testimonials: Testimonial[];
+  testimonials: TestimonialsSection;
   footer: FooterData;
+  cta: CtaSection;
 };

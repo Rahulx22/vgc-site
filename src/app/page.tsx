@@ -32,17 +32,20 @@ function mapApiToHomeDataStrict(apiJson: any): HomeData {
     paragraphs: firstBanner?.subtitle
       ? String(firstBanner.subtitle).split(/\n{2,}/).map((s: string) => s.trim()).filter(Boolean)
       : [],
-    phone: (firstBanner?.cta_link || "").replace(/^tel:/, ""),
+    phone: (firstBanner?.cta_text || "").replace(/^tel:/, ""),
+    cta_link: (firstBanner?.cta_link || "").replace(/^tel:/, ""),
+
     counters: [], 
     banners: bannersRaw.map((b: any) => ensureUrl(b?.image)),
   };
-
   // Services
   const servicesBlock = blocks.find((b: any) => b.type === "services_section");
   const services = (servicesBlock?.data?.services || []).map((s: any) => ({
+    id: s.id || "",
     title: s.title || "",
     desc: stripHtml(s.short_description || s.long_description || ""),
     link: s.slug ? `/service/${s.slug}` : s.link ? s.link : "/service",
+    image: ensureUrl(s.featured_image || s.mobile_featured_image),
   }));
 
   // Blog
@@ -66,13 +69,29 @@ function mapApiToHomeDataStrict(apiJson: any): HomeData {
   const clientsTitle = clientsBlock?.data?.title || "";
   const clientsSubtitle = clientsBlock?.data?.subtitle || "";
 
-  // Testimonials
+  // Testimonials with section data
   const testimonialsBlock = blocks.find((b: any) => b.type === "testimonials_section");
-  const testimonials = (testimonialsBlock?.data?.items || []).map((t: any) => ({
-    text: t.quote || "",
-    author: t.author || t.item_author || "",
-    avatar: ensureUrl(t.avatar),
-  }));
+  const testimonials = {
+    items: (testimonialsBlock?.data?.items || []).map((t: any) => ({
+      text: t.quote || "",
+      author: t.author || t.item_author || "",
+      avatar: ensureUrl(t.avatar),
+      rating: t.rating || "5",
+    })),
+    left_text: testimonialsBlock?.data?.left_text || "Building Trust Through Results",
+    right_text: testimonialsBlock?.data?.right_text || "Testimonials",
+    right_subtext: testimonialsBlock?.data?.right_subtext || "Client Success Stories: Hear What They Say",
+  };
+
+  // CTA Section - try to get from cta_section first, fallback to banner data
+  const ctaBlock = blocks.find((b: any) => b.type === "cta_section");
+  const cta = {
+    subtext: ctaBlock?.data?.subtext || "Don't let finance and tax problems hold you back. At VGC Advisors, we are committed to empowering your business with expert financial advice and tailored solutions. Contact us today to learn how we can help you thrive.",
+    cta_link: ctaBlock?.data?.cta_link || firstBanner?.cta_link || "tel:+1234567891",
+    cta_text: ctaBlock?.data?.cta_text || firstBanner?.cta_text || "Make a Call +123 456 7891",
+    top_heading: ctaBlock?.data?.top_heading || "Get Started Today!",
+    main_heading: ctaBlock?.data?.main_heading || "Ready to Take Your Business to the Next Level?",
+  };
 
   const footer = {
     phone: "", 
@@ -90,6 +109,7 @@ function mapApiToHomeDataStrict(apiJson: any): HomeData {
     clientsSubtitle,
     testimonials,
     footer,
+    cta,
   } as HomeData;
 }
 
@@ -139,18 +159,18 @@ export default async function Page() {
       <Services services={data.services} />
       <Blog items={data.blog} />
       <Clients items={data.clients} title={data.clientsTitle} subtitle={data.clientsSubtitle} />
-      <Testimonials items={data.testimonials} />
+      <Testimonials testimonials={data.testimonials} />
 
       <div className="ready-sec">
         <div className="container">
           <div className="row">
             <div className="col-lg-12 col-md-12" data-aos="fade-left" data-aos-duration="1200">
-              <h3>Get Started Today!</h3>
-              <h2>Ready to Take Your Business to the Next Level?</h2>
+              <h3>{data.cta.top_heading}</h3>
+              <h2>{data.cta.main_heading}</h2>
               <p>
-                Don't let finance and tax problems hold you back. At VGC Advisors, we are committed to empowering your business with expert financial advice and tailored solutions. Contact us today to learn how we can help you thrive.
+                {data.cta.subtext}
               </p>
-              <a href={`tel:${data.hero.phone}`}>Make a Call {data.hero.phone}</a>
+              <a href={data.cta.cta_link}>{data.cta.cta_text}</a>
             </div>
           </div>
         </div>

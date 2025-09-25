@@ -36,7 +36,7 @@ export default function ServicePage() {
   return (
     <>
       <Header />
-
+      
       <div
         className="service-banner"
         style={{
