@@ -1,9 +1,8 @@
-// components/WhyChooseSection.tsx
 import Image from "next/image";
 import React from "react";
 
 interface Feature {
-  icon: string;
+  icon?: string | null;
   title: string;
   description: string;
 }
@@ -14,12 +13,12 @@ interface WhyChooseSectionProps {
 }
 
 export default function WhyChooseSection({ title, features }: WhyChooseSectionProps) {
-  // Defensive: if features is not an array, don't try to map and avoid server crash
   if (!Array.isArray(features) || features.length === 0) {
-    // Optional: render nothing or a fallback markup
-    console.warn("WhyChooseSection: no features provided or features is not an array", { features });
+    console.warn("WhyChooseSection: no features provided or invalid features", { features });
     return null;
   }
+
+  const fallback = "/images/abt-icon.webp"; 
 
   return (
     <div className="why-sec">
@@ -35,16 +34,14 @@ export default function WhyChooseSection({ title, features }: WhyChooseSectionPr
               data-aos={index % 2 === 0 ? "fade-down" : "fade-up"}
               data-aos-duration="1200"
             >
-              {/* Image requires a valid src. If feature.icon is missing, show nothing */}
-              {feature.icon ? (
-                <Image
-                  src={feature.icon}
-                  alt={`${feature.title} icon`}
-                  width={150}
-                  height={150}
-                  loading="lazy"
-                />
-              ) : null}
+              <Image
+                src={feature.icon || fallback}
+                alt={`${feature.title} icon`}
+                width={150}
+                height={150}
+                loading="lazy"
+                unoptimized
+              />
               <h3>{feature.title}</h3>
               <p>{feature.description}</p>
             </div>

@@ -3,7 +3,7 @@ import Footer from "../components/Footer";
 import InnerBanner from "../components/InnerBanner";
 import BlogCard from "../components/BlogCard";
 import blogData from "../../data/blog.json";
-import { BlogPage } from "../../types/pages";
+import type { BlogPage } from "../../types/pages";
 
 export default function BlogPage() {
   const data: BlogPage = blogData;

@@ -5,7 +5,7 @@ import Header from "../components/Header";
 import Footer from "../components/Footer";
 import Image from "next/image";
 import careerData from "../../data/career.json";
-import { CareerPage } from "../../types/pages";
+import type { CareerPage } from "../../types/pages";
 
 export default function CareerPage() {
   const data: CareerPage = careerData;
@@ -180,9 +180,9 @@ export default function CareerPage() {
                     </div>
                     <div className="col-lg-3 col-md-4">
                       <div className="in-box">
-                        <label>Bachelor's Degree</label>
+                        <label>Bachelor&apos;s Degree</label>
                         <select className="box" name="degree" value={formData.degree} onChange={handleChange}>
-                          <option value="">Bachelor's Degree</option>
+                          <option value="">Bachelor&apos;s Degree</option>
                           <option value="commerce">Commerce</option>
                           <option value="accounting">Accounting</option>
                           <option value="finance">Finance</option>

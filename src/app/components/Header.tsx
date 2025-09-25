@@ -47,7 +47,6 @@ useEffect(() => {
     }
   }, [menuOpen]);
 
-  const openMenu = () => setMenuOpen(true);
   const closeMenu = () => {
     setMenuOpen(false);
     setServicesOpen(false);

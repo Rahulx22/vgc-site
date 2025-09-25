@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import Header from "../components/Header";
@@ -15,13 +15,7 @@ export default function ServicePage() {
     message: ""
   });
 
-  useEffect(() => {
-  (async () => {
-    const mod = await import("aos");
-    await import("aos/dist/aos.css");
-    mod.default.init({ once: true, duration: 900 });
-  })();
-}, []);
+// AOS globally initialized in AOSProvider
 
 
   const handleChange = (
@@ -43,7 +37,14 @@ export default function ServicePage() {
     <>
       <Header />
 
-      <div className="service-banner">
+      <div
+        className="service-banner"
+        style={{
+          backgroundImage: `url(${serviceData.banner.image})`,
+          backgroundSize: "cover",
+          backgroundPosition: "center",
+        }}
+      >
         <div className="container">
           <div className="row">
             <div
@@ -143,21 +144,19 @@ export default function ServicePage() {
             <div className="col-xl-10 col-lg-12 col-md-12 offset-xl-1">
               <h5>{serviceData.services.title}</h5>
 
-              <div className="row services-grid">
+              <div className="row">
                 {serviceData.services.items.map((svc, idx) => (
                   <div key={idx} className="col-lg-6 col-md-6">
                     <article className="serv-box" data-aos="zoom-in" data-aos-duration="1200">
-                      <strong className="check-wrap">
+                      <strong>
                         <Image src="/images/check.svg" alt="check" width={20} height={20} />
                       </strong>
 
                       <h3>{svc.title}</h3>
 
-                      <div className="serv-desc">
-                        {svc.description.map((d, di) => (
-                          <p key={di}>{d}</p>
-                        ))}
-                      </div>
+                      {svc.description.map((d, di) => (
+                        <p key={di}>{d}</p>
+                      ))}
 
                       <Link href={svc.link} className="read-btn">
                         Learn More
@@ -180,70 +179,7 @@ export default function ServicePage() {
         }}
       />
 
-      {/* small page-scoped css for exact grid spacing */}
-      <style jsx>{`
-  .services-grid {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    grid-template-rows: repeat(8, auto);
-    gap: 32px; /* gap thoda zyada */
-    margin-top: 40px;
-  }
-
-  .serv-box {
-    background: #f6f6f6;
-    border: 1px solid #e8e8e9;
-    border-radius: 10px;
-    padding: 32px;          /* pehle 24px tha, ab bada */
-    min-height: 240px;      /* pehle 190px tha */
-    margin-bottom: 24px;
-    box-shadow: 0 8px 20px rgba(3,11,27,0.06);
-  }
-
-  .serv-box h3 {
-    font-size: 18px; /* thoda bada */
-    margin: 12px 0 10px;
-    color: #1f2b44;
-    font-weight: 700;
-  }
-
-  .serv-box .serv-desc p {
-    font-size: 14px; /* pehle 13px tha */
-    color: #6b7280;
-    margin: 8px 0;
-    line-height: 1.4;
-  }
-
-  .read-btn {
-    display: inline-block;
-    margin-top: 16px;
-    color: #1f2b44;
-    text-decoration: underline;
-    font-weight: 500;
-  }
-
-  .check-wrap {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    background: #eef6fb;
-    border-radius: 50%;
-    width: 100px;  /* pehle 36px tha */
-    height: 42px;
-    font-size: 18px;
-  }
-
-  @media (max-width: 991px) {
-    .services-grid {
-      grid-template-columns: 1fr;
-      grid-template-rows: auto;
-    }
-    .serv-box {
-      min-height: 200px;
-      padding: 28px;
-    }
-  }
-`}</style>
+      
 
     </>
   );

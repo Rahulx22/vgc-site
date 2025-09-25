@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import Script from "next/script";
+import AOSProvider from "./components/AOSProvider";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -36,7 +37,7 @@ export default function RootLayout({
         <link href="/images/fav.webp" rel="icon" />
       </head>
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
-        {children}
+        <AOSProvider>{children}</AOSProvider>
 
         <Script src="https://unpkg.com/aos@2.3.1/dist/aos.js" strategy="afterInteractive" />
         <Script src="https://code.jquery.com/jquery-3.7.1.min.js" strategy="afterInteractive" />

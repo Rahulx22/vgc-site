@@ -12,7 +12,7 @@ interface BlogCardProps {
 
 export default function BlogCard({ id, title, excerpt, image, date, slug }: BlogCardProps) {
   return (
-    <div className="col-lg-4 col-md-6">
+    <div className="col-lg-4 col-md-6" id={`blog-${id}`}>
       <div className="blog-box">
         <div className="blog-img">
           <Link href={`/blog/${slug}`}>

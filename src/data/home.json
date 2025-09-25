@@ -1,12 +1,10 @@
 {
 "hero": {
 "title": "Empowering Your Financial Journey, One Step at a Time",
-"paragraphs": [
-"As a professional CA consulting firm, VGC is dedicated to helping small and medium enterprises, startups, and corporate clients achieve sustainable growth and scalability.",
-"We provide expert, data-backed advice and ensure legal compliance, giving you a clear and financially strong foundation for your business",
-"Our commitment to a structured process and timely responses sets us apart, guaranteeing a seamless and professional experience"
+"subtitle": [
+
 ],
-"phone": "+123 456 7891",
+"cta_link": "+123 456 7891",
 "counters": [
 { "label": "Revenue Growth Rate", "value": "15%" },
 { "label": "Client Retention Rate", "value": "90%" },
@@ -21,12 +19,12 @@
 { "title": "Financial & Advisory Mastery", "desc": "Our comprehensive audit services include Statutory Audits, Internal Audits, Management Audits, and Special Investigation Audits to provide clarity and confidence in your financial reporting.", "link": "#" }
 ],
 "blog": [
-{ "date": "29 April 2024", "title": "The Importance of Diversification in Investment Portfolios", "excerpt": "Venenatis aliquet odio orci viverra quisque ultricies nec. Mollis dolor diam vitae est varius magna.", "image": "/images/blog-img.webp", "link": "/blog-single.html" },
+{ "date": "29 April 2024", "title": "", "excerpt": "Venenatis aliquet odio orci viverra quisque ultricies nec. Mollis dolor diam vitae est varius magna.", "image": "/images/blog-img.webp", "link": "/blog-single.html" },
 { "date": "29 April 2024", "title": "Estate Planning Essentials: Protecting Your Legacy", "excerpt": "Venenatis aliquet odio orci viverra quisque ultricies nec. Mollis dolor diam vitae est varius magna.", "image": "/images/blog-img1.webp", "link": "/blog-single.html" },
 { "date": "29 April 2024", "title": "The Impact of Inflation on Savings and Investments", "excerpt": "Venenatis aliquet odio orci viverra quisque ultricies nec. Mollis dolor diam vitae est varius magna.", "image": "/images/blog-img2.webp", "link": "/blog-single.html" }
 ],
 "clients": [
-  { "title": "Banks & Insurance", "icon": "/images/client-icon.svg" },
+  
   { "title": "Education & Welfare", "icon": "/images/client-icon1.svg" },
   { "title": "Others including NGOs", "icon": "/images/client-icon2.svg" },
   { "title": "Information Technologies", "icon": "/images/client-icon3.svg" },

@@ -1,7 +1,9 @@
 {
   "banner": {
     "title": "Our Expertise, Your Growth",
-    "description": "Comprehensive business, tax, and compliance solutions tailored to empower MSMEs, corporates, and global ventures — delivered with precision, integrity, and strategic insight."
+    "description": "Comprehensive business, tax, and compliance solutions tailored to empower MSMEs, corporates, and global ventures — delivered with precision, integrity, and strategic insight.",
+    "image": "/images/service-banner.webp",
+    "alt": "service-banner"
   },
   "form": {
     "title": "Make Confident Decisions with VGC Advisors",

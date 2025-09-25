@@ -67,7 +67,7 @@ export interface BlogSinglePage {
     date: string;
     image: string;
     content: Array<{
-      type: 'paragraph' | 'heading';
+      type: string;
       text: string;
     }>;
   };
@@ -147,7 +147,7 @@ export interface CareerPage {
     buttons: Array<{
       text: string;
       link: string;
-      type: 'primary' | 'secondary';
+      type: string;
     }>;
   };
 }

@@ -7,8 +7,14 @@ interface ContactFormProps {
   onSubmit?: (data: FormData) => void;
 }
 
+type ContactFormData = {
+  name: string;
+  email: string;
+  message: string;
+};
+
 export default function ContactForm({ title, onSubmit }: ContactFormProps) {
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<ContactFormData>({
     name: "",
     email: "",
     message: ""
@@ -16,9 +22,7 @@ export default function ContactForm({ title, onSubmit }: ContactFormProps) {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (onSubmit) {
-      onSubmit(formData as any);
-    }
+    onSubmit?.(formData as unknown as FormData);
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {

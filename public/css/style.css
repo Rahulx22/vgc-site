@@ -106,7 +106,7 @@ footer .call-btn { margin:20px 0 0; }
 .copy-txt h6 { color:var(--main-color); font-size:12px; font-weight:normal; letter-spacing:0.5px; margin:7px 0; text-transform:uppercase; }
 
 /******************** service page CSS ********************/
-.service-banner { background-image:url(../images/service-banner.webp) !important; background-position:top center; background-size:cover; margin:84px 0 0; padding:120px 0 250px; }
+.service-banner { background-position:top center; background-size:cover; margin:84px 0 0; padding:120px 0 250px; }
 .service-banner h1 { color:#fff; font-size:75px; font-weight:700; margin:0 0 35px; }
 .service-banner p { color:#fff; font-size:24px; line-height:1.5; margin:0; text-align:justify; }
 
