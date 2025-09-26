@@ -4,7 +4,27 @@ import React, { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 
-export default function Header() {
+type NavigationItem = {
+  label: string;
+  url: string;
+  is_external: boolean;
+  order: number;
+};
+
+type HeaderData = {
+  logo: string;
+  navigation: NavigationItem[];
+  button: {
+    text: string;
+    link: string;
+  };
+};
+
+type HeaderProps = {
+  data?: HeaderData | null;
+};
+
+export default function Header({ data }: HeaderProps) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [servicesOpen, setServicesOpen] = useState(false);
   const headerRef = useRef<HTMLElement | null>(null);
@@ -52,6 +72,18 @@ useEffect(() => {
     setServicesOpen(false);
   };
 
+  // Default values
+  const logoUrl = data?.logo ? `https://vgc.psofttechnologies.in/storage/builder/${data.logo}` : "/images/logo.svg";
+  const navigation = data?.navigation || [
+    { label: "Home", url: "/", is_external: false, order: 1 },
+    { label: "About", url: "/about-us", is_external: false, order: 2 },
+    { label: "Services", url: "/service", is_external: false, order: 3 },
+    { label: "Blog", url: "/blog", is_external: false, order: 4 },
+    { label: "Contact", url: "/contact-us", is_external: false, order: 5 }
+  ];
+  const buttonText = data?.button?.text || "Contact Us";
+  const buttonLink = data?.button?.link || "/contact-us";
+
   return (
     <header ref={headerRef}>
       <div className="container">
@@ -62,14 +94,14 @@ useEffect(() => {
           >
             <div className="d-none d-md-inline-flex" style={{ alignItems: "center" }}>
               <Link href="/" aria-label="Home">
-                <Image src="/images/logo.svg" alt="logo" width={200} height={109} style={{ filter: "none" }} />
+                <Image src={logoUrl} alt="logo" width={200} height={109} style={{ filter: "none" }} />
               </Link>
             </div>
 
             {/* Mobile logo (small screens) */}
             <div className="mob-logo d-md-none" style={{ display: "flex", alignItems: "center" }}>
               <Link href="/" aria-label="Home (mobile)">
-                <Image src="/images/logo.svg" alt="logo" width={120} height={60} style={{ filter: "none" }} />
+                <Image src={logoUrl} alt="logo" width={120} height={60} style={{ filter: "none" }} />
               </Link>
             </div>
 
@@ -95,32 +127,20 @@ useEffect(() => {
               {/* Desktop inline nav (md+) */}
               <div className="navbar-collapse collapse d-none d-md-flex" id="navbarCollapse" style={{ marginLeft: "auto" }}>
                 <ul className="navbar-nav" style={{ display: "flex", gap: 12, alignItems: "center", marginLeft: "auto" }}>
-                  <li className="nav-item active">
-                    <Link href="/" className="nav-link">Home</Link>
-                  </li>
-
-                  <li className="nav-item">
-                    <Link href="/about-us" className="nav-link">About Us</Link>
-                  </li>
-
-                  <li className="nav-item dropdown">
-                    <Link href="/service" className="nav-link">Services</Link>
-                  </li>
-
-                  <li className="nav-item">
-                    <Link href="/blog" className="nav-link">Blog</Link>
-                  </li>
-
-                  <li className="nav-item">
-                    <Link href="/career" className="nav-link">Career</Link>
-                  </li>
+                  {navigation
+                    .sort((a, b) => a.order - b.order)
+                    .map((item) => (
+                      <li key={item.order} className="nav-item">
+                        <Link href={item.url} className="nav-link">{item.label}</Link>
+                      </li>
+                    ))}
                 </ul>
               </div>
             </nav>
 
-            {/* Contact button (unchanged) */}
+            {/* Contact button */}
             <div style={{ marginLeft: 20 }}>
-              <Link href="/contact-us" className="cont-btn">Contact Us</Link>
+              <Link href={buttonLink} className="cont-btn">{buttonText}</Link>
             </div>
           </div>
         </div>
@@ -136,28 +156,13 @@ useEffect(() => {
 
         <nav className="offcanvas-nav">
           <ul>
-            <li>
-              <Link href="/" onClick={closeMenu}>Home</Link>
-            </li>
-            <li>
-              <Link href="/about-us" onClick={closeMenu}>About Us</Link>
-            </li>
-            <li>
-              <button className="services-toggle" onClick={() => setServicesOpen((s) => !s)}>
-                Services <span className={`chev ${servicesOpen ? "open" : ""}`}>▾</span>
-              </button>
-              <ul className={`sub-menu ${servicesOpen ? "open" : ""}`}>
-                <li><Link href="/business-support" onClick={closeMenu}>Business Support</Link></li>
-                <li><a href="#" onClick={closeMenu}>Direct Tax Services</a></li>
-                <li><a href="#" onClick={closeMenu}>Indirect Tax Services</a></li>
-              </ul>
-            </li>
-            <li>
-              <Link href="/blog" onClick={closeMenu}>Blog</Link>
-            </li>
-            <li>
-              <Link href="/career" onClick={closeMenu}>Career</Link>
-            </li>
+            {navigation
+              .sort((a, b) => a.order - b.order)
+              .map((item) => (
+                <li key={item.order}>
+                  <Link href={item.url} onClick={closeMenu}>{item.label}</Link>
+                </li>
+              ))}
           </ul>
         </nav>
       </div>

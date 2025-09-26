@@ -20,6 +20,7 @@ type ApiResponse = {
 };
 
 const API_URL = "https://vgc.psofttechnologies.in/api/v1/pages";
+const SETTINGS_URL = "https://vgc.psofttechnologies.in/api/v1/settings";
 const STORAGE_BASE = "https://vgc.psofttechnologies.in/storage/";
 
 function mkImage(path?: string | null) {
@@ -40,6 +41,19 @@ function splitParagraphs(text?: string | null) {
     .split(/\n{2,}/)
     .map((p) => p.trim())
     .filter(Boolean);
+}
+
+async function fetchSettings() {
+  try {
+    const res = await fetch(SETTINGS_URL, { cache: 'force-cache' });
+    if (!res.ok) {
+      return null;
+    }
+    return await res.json();
+  } catch (err) {
+    console.error("[Settings] API fetch failed:", err);
+    return null;
+  }
 }
 
 async function fetchAboutPage() {
@@ -133,24 +147,27 @@ async function fetchAboutPage() {
 }
 
 export default async function AboutPage() {
-  const data = await fetchAboutPage();
+  const [data, settings] = await Promise.all([
+    fetchAboutPage(),
+    fetchSettings()
+  ]);
 
   if (!data) {
     return (
       <>
-        <Header />
+        <Header data={settings?.data?.header} />
         <main className="container py-8">
           <h1>About</h1>
           <p>Sorry — about page content is currently unavailable.</p>
         </main>
-        <Footer />
+        <Footer data={settings?.data?.footer} />
       </>
     );
   }
 
   return (
     <>
-      <Header />
+      <Header data={settings?.data?.header} />
 
       <InnerBanner
         title={data.banner.title}
@@ -202,7 +219,7 @@ export default async function AboutPage() {
         </div>
       </div>
 
-      <Footer />
+      <Footer data={settings?.data?.footer} />
     </>
   );
 }

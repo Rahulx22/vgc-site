@@ -8,8 +8,7 @@ import Testimonials from "./components/Testimonials";
 import Footer from "./components/Footer";
 
 import type { HomeData } from "../types/home";
-import { fetchWithTimeout, ensureUrl, stripHtml, API_URL } from "../lib/api";
-
+import { fetchWithTimeout, ensureUrl, stripHtml, API_URL, fetchSettings } from "../lib/api";
 /**
  * Map API response -> HomeData
  * Throws if shape is unexpected so dev can see the error.
@@ -105,16 +104,24 @@ function mapApiToHomeDataStrict(apiJson: any): HomeData {
 }
 
 export default async function Page() {
+  // Fetch both pages and settings data
   let json: any;
+  let settings: any;
+  
   try {
-    const res = await fetchWithTimeout(API_URL, { cache: 'force-cache' }, 10000);
-    if (!res.ok) {
-      const text = await res.text().catch(() => "<no body>");
-      throw new Error(`API returned non-OK status ${res.status} - ${res.statusText}. Body: ${text}`);
+    const [pagesRes, settingsRes] = await Promise.all([
+      fetchWithTimeout(API_URL, { cache: 'force-cache' }, 10000),
+      fetchSettings()
+    ]);
+    
+    if (!pagesRes.ok) {
+      const text = await pagesRes.text().catch(() => "<no body>");
+      throw new Error(`Pages API returned non-OK status ${pagesRes.status} - ${pagesRes.statusText}. Body: ${text}`);
     }
-    json = await res.json();
+    
+    json = await pagesRes.json();
+    settings = settingsRes;
   } catch (err) {
-   
     console.error("[Home] API fetch failed:", err);
     throw err;
   }
@@ -139,7 +146,7 @@ export default async function Page() {
   // 3) render using the mapped data
   return (
     <>
-      <Header />
+      <Header data={settings?.data?.header} />
       <HeroCarousel hero={data.hero} />
       <Services services={data.services} />
       <Blog items={data.blog} />
@@ -159,7 +166,7 @@ export default async function Page() {
         </div>
       </div>
 
-      <Footer footer={data.footer} />
+      <Footer data={settings?.data?.footer} />
     </>
   );
 }

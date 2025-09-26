@@ -4,15 +4,46 @@ import Link from "next/link";
 import Image from "next/image";
 import React from "react";
 
+type NavigationItem = {
+  label: string;
+  url: string;
+  is_external: boolean;
+  order: number;
+};
+
+type SocialLink = {
+  platform: string;
+  url: string;
+  icon: string | null;
+};
+
 type FooterData = {
-  phone?: string;
-  email?: string;
-  social?: string[]; 
-  copyright?: string;
+  column_1: {
+    logo: string;
+    description: string;
+    phone: string;
+    email: string;
+  };
+  column_2: {
+    show_navigation: boolean;
+    navigation: NavigationItem[];
+  };
+  column_3: {
+    social_links: SocialLink[];
+    newsletter: {
+      enabled: boolean;
+      heading: string;
+      subtext: string;
+    };
+  };
+  bottom_bar: {
+    left_text: string;
+    right_text: string;
+  };
 };
 
 type FooterProps = {
-  footer?: FooterData | null;
+  data?: FooterData | null;
 };
 
 function normalizePhoneToHref(raw?: string) {
@@ -23,16 +54,38 @@ function normalizePhoneToHref(raw?: string) {
   return `tel:${digits}`;
 }
 
-export default function Footer({ footer }: FooterProps) {
-  const displayPhone = footer?.phone ?? "+123 456 789 100";
-  const phoneHref = normalizePhoneToHref(footer?.phone ?? displayPhone);
-
-  const email = footer?.email ?? "hi@vgc@gmail.com";
-  const social = Array.isArray(footer?.social) && footer!.social.length ? footer!.social : ["#", "#", "#", "#", "#"];
-  const copyright = footer?.copyright ?? "Copyright © 2025. All rights reserved.";
+export default function Footer({ data }: FooterProps) {
+  // Default values
+  const logoUrl = data?.column_1?.logo ? `https://vgc.psofttechnologies.in/storage/builder/${data.column_1.logo}` : "/images/logo.svg";
+  const description = data?.column_1?.description ?? "Don't let finance and tax problems hold you back. At VGC Advisors, we are committed to empowering your business with expert financial advice and tailored solutions. Contact us today to learn how we can help you thrive.";
+  const displayPhone = data?.column_1?.phone ?? "+123 456 789 100";
+  const phoneHref = normalizePhoneToHref(displayPhone);
+  const email = data?.column_1?.email ?? "hi@vgc@gmail.com";
+  
+  const navigation = data?.column_2?.navigation || [
+    { label: "Home", url: "/", is_external: false, order: 1 },
+    { label: "About", url: "/about-us", is_external: false, order: 2 },
+    { label: "Services", url: "/service", is_external: false, order: 3 },
+    { label: "Blog", url: "/blog", is_external: false, order: 4 },
+    { label: "Contact", url: "/contact-us", is_external: false, order: 5 }
+  ];
+  
+  const socialLinks = data?.column_3?.social_links || [];
+  const newsletter = data?.column_3?.newsletter;
+  const leftText = data?.bottom_bar?.left_text ?? "VGC Consulting Pvt. Ltd.";
+  const rightText = data?.bottom_bar?.right_text ?? "Copyright © 2025. All rights reserved.";
 
   const defaultIcons = ["fb.svg", "pint.svg", "link.svg", "ins.svg", "tw.svg"];
-  const pickIcon = (i: number) => `/images/${defaultIcons[i] ?? "link.svg"}`;
+  const pickIcon = (platform: string) => {
+    const iconMap: { [key: string]: string } = {
+      facebook: "fb.svg",
+      twitter: "tw.svg", 
+      linkedin: "link.svg",
+      instagram: "ins.svg",
+      pinterest: "pint.svg"
+    };
+    return `/images/${iconMap[platform] ?? "link.svg"}`;
+  };
 
   function handleSubscribe(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -53,12 +106,10 @@ export default function Footer({ footer }: FooterProps) {
         <div className="row">
           <div className="col-xl-4 col-lg-4 col-md-4">
             <Link href="/" aria-label="Home">
-              <Image src="/images/logo.svg" alt="logo" width={150} height={50} loading="lazy" />
+              <Image src={logoUrl} alt="logo" width={150} height={50} loading="lazy" />
             </Link>
 
-            <p>
-              Don&apos;t let finance and tax problems hold you back. At VGC Advisors, we are committed to empowering your business with expert financial advice and tailored solutions. Contact us today to learn how we can help you thrive.
-            </p>
+            <p>{description}</p>
 
             <ul className="info-list">
               <li>
@@ -80,44 +131,50 @@ export default function Footer({ footer }: FooterProps) {
           <div className="col-xl-3 col-lg-3 col-md-2 offset-xl-1">
             <h2>Navigation</h2>
             <ul>
-              <li><Link href="/">Home</Link></li>
-              <li><Link href="/about-us">About Us</Link></li>
-              <li><Link href="/career">Careers</Link></li>
-              <li><Link href="/service">Services</Link></li>
-              <li><Link href="/blog">Blogs</Link></li>
+              {navigation
+                .sort((a, b) => a.order - b.order)
+                .map((item) => (
+                  <li key={item.order}>
+                    <Link href={item.url}>{item.label}</Link>
+                  </li>
+                ))}
             </ul>
           </div>
 
           {/* social + newsletter */}
           <div className="col-xl-4 col-lg-5 col-md-6">
             <ul className="social-icon">
-              {social.map((sUrl, idx) => (
+              {socialLinks.map((social, idx) => (
                 <li key={idx}>
                   <a
-                    href={sUrl && sUrl.trim() !== "" ? sUrl : "#"}
+                    href={social.url && social.url.trim() !== "" ? social.url : "#"}
                     target="_blank"
                     rel="noopener noreferrer"
-                    aria-label={`Social ${idx + 1}`}
+                    aria-label={`${social.platform} social link`}
                   >
-                    <Image src={pickIcon(idx)} alt={`social-${idx + 1}`} width={30} height={30} loading="lazy" />
+                    <Image src={pickIcon(social.platform)} alt={`${social.platform} icon`} width={30} height={30} loading="lazy" />
                   </a>
                 </li>
               ))}
             </ul>
 
-            <h2>Subscribe Our Newsletter</h2>
-            <p>Egestas tempus neque amet suspendisse ornare nibh elit morbi. Leo iaculis proin orci sed.</p>
+            {newsletter?.enabled && (
+              <>
+                <h2>{newsletter.heading}</h2>
+                <p>{newsletter.subtext}</p>
 
-            <form onSubmit={handleSubscribe}>
-              <input className="box" type="text" placeholder="Your Email" />
-              <input type="submit" className="call-btn" value="Subscribe" />
-            </form>
+                <form onSubmit={handleSubscribe}>
+                  <input className="box" type="text" placeholder="Your Email" />
+                  <input type="submit" className="call-btn" value="Subscribe" />
+                </form>
+              </>
+            )}
           </div>
 
           <div className="col-lg-12 col-md-12">
             <div className="copy-txt">
-              <h6>VGC Consulting Opt.</h6>
-              <center><h6>{copyright}</h6></center>
+              <h6>{leftText}</h6>
+              <center><h6>{rightText}</h6></center>
             </div>
           </div>
         </div>
