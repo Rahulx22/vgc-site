@@ -43,7 +43,7 @@ function splitParagraphs(text?: string | null) {
 }
 
 async function fetchAboutPage() {
-  const res = await fetch(API_URL, { next: { revalidate: 60 } });
+  const res = await fetch(API_URL, { cache: 'force-cache' });
   if (!res.ok) {
     return null;
   }
@@ -132,7 +132,7 @@ async function fetchAboutPage() {
   };
 }
 
-export default async function AboutPage(): Promise<JSX.Element> {
+export default async function AboutPage() {
   const data = await fetchAboutPage();
 
   if (!data) {
