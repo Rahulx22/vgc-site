@@ -1,5 +1,6 @@
 // lib/api.ts
 export const API_URL = "https://vgc.psofttechnologies.in/api/v1/pages";
+export const SETTINGS_URL = "https://vgc.psofttechnologies.in/api/v1/settings";
 export const IMAGE_BASE = "https://vgc.psofttechnologies.in/storage/builder/";
 
 /**
@@ -33,4 +34,20 @@ export function ensureUrl(path?: string | null) {
  */
 export function stripHtml(html = ""): string {
   return String(html).replace(/<[^>]+>/g, "").trim();
+}
+
+/**
+ * Fetch settings data
+ */
+export async function fetchSettings() {
+  try {
+    const res = await fetchWithTimeout(SETTINGS_URL, { cache: 'force-cache' }, 10000);
+    if (!res.ok) {
+      throw new Error(`Settings API returned ${res.status}`);
+    }
+    return await res.json();
+  } catch (err) {
+    console.error("[Settings] API fetch failed:", err);
+    return null;
+  }
 }

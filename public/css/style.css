@@ -216,13 +216,6 @@ footer .call-btn { margin:20px 0 0; }
 .team-info .close { background-color:transparent; border:none; border-radius:50%; color:#000; font-size:35px; font-weight:500; position:absolute; right:24px; top:0; z-index:1; }
 .team-info .modal-content { border:none; border-radius:0; padding:45px 50px 25px; text-align:left; }
 .team-info h4 { font-size:26px; margin:0 0 14px; }
-
-
-
-
-
-
-
 /*.................. Home-Page-Media .................. */
 @media (min-width:320px) and (max-width:767.98px){
 header .cont-btn, .main .count-list, .contact-sec.dd .col-xl-12 { display:none; }
@@ -280,7 +273,6 @@ footer .col-xl-3 { padding:20px 12px; }
 .blog-txt img { height:200px; }
 .team-info .modal-content { padding:28px 18px 10px; }
 }
-
 @media (min-width:320px) and (max-width:991.98px){
 .logo { margin:15px 0; }	
 .mob-logo { margin:20px auto; width:145px; }
@@ -317,20 +309,17 @@ header.smaller .navbar-toggler .icon-bar { background-color:#fff; }
 .about-sec .col-lg-6:first-child { padding:0 12px 35px; }
 .about-sec.dd .col-lg-6:last-child { padding:35px 12px 0; }
 }
-
 @media (min-width:480px) and (max-width:767.98px){
 .main img { height:550px; }
 .testimonial-sec h2 { font-size:50px; }
 .team-sec .col-lg-3 { width:50%; }
 .team-sec img { height:200px; width:200px; }
 }
-
 @media (min-width:768px){
 .service-sec .count-list { display:none; }
 .business-box h3 strong { border-bottom:2px solid var(--main-color); font-weight:600; padding-bottom:3px; }
 .team-info .modal-dialog { align-items:center; display:flex; height:100%; justify-content:center; margin:0 auto; max-width:900px; }
 }
-
 @media (min-width:768px) and (max-width:991.98px){	
 header .navbar-expand-md .navbar-toggler, header .navbar-expand-md .navbar-collapse { display:block !important; }
 header .navbar-expand-md .navbar-nav .dropdown-menu { position:relative; }
@@ -356,7 +345,6 @@ header .navbar .dropdown i, .mob-logo { display:none; }
 .testimonial-sec h2 { margin:80px 0 0; }
 .business-banner .col-xl-6 { padding-right:0; }
 }
-
 @media (min-width:992px) and (max-width:1199.98px){	
 .service-sec h2 { font-size:65px; }
 .ready-sec h2 { width:80%; }
@@ -365,24 +353,20 @@ header .navbar .dropdown i, .mob-logo { display:none; }
 .testimonial-sec h2::after { right:0; }
 .serv-head { padding:12px 15px 15px; }
 }
-
 @media (min-width:992px) and (max-width:1499.98px){
 .business-banner .col-xl-5 { padding-bottom:120px; }	
 .cont-form { padding:70px 50px; }
 .contact-sec.dd .cont-form { padding:20px 20px 40px; }
 }
-
 @media (min-width:1200px) and (max-width:1399.98px){
 .ready-sec h2 { width:50%; }
 .testimonial-sec h2 { font-size:62px; }
 .serv-head { padding:12px 40px 15px; }
 }
-
 @media (min-width:1400px){
 .service-sec .col-lg-6 { margin:0 0 36px; padding:0 18px; }
 .business-banner .col-xl-5 { padding-right:70px; }
 }
-
 @media (min-width: 992px) {
   header .navbar-collapse,
   header .navbar-collapse.collapse {

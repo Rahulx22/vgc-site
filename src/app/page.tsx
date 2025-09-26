@@ -8,8 +8,7 @@ import Testimonials from "./components/Testimonials";
 import Footer from "./components/Footer";
 
 import type { HomeData } from "../types/home";
-import { fetchWithTimeout, ensureUrl, stripHtml, API_URL } from "../lib/api";
-
+import { fetchWithTimeout, ensureUrl, stripHtml, API_URL, fetchSettings } from "../lib/api";
 /**
  * Map API response -> HomeData
  * Throws if shape is unexpected so dev can see the error.
@@ -32,20 +31,17 @@ function mapApiToHomeDataStrict(apiJson: any): HomeData {
     paragraphs: firstBanner?.subtitle
       ? String(firstBanner.subtitle).split(/\n{2,}/).map((s: string) => s.trim()).filter(Boolean)
       : [],
-    phone: (firstBanner?.cta_text || "").replace(/^tel:/, ""),
-    cta_link: (firstBanner?.cta_link || "").replace(/^tel:/, ""),
-
+    phone: (firstBanner?.cta_link || "").replace(/^tel:/, ""),
     counters: [], 
     banners: bannersRaw.map((b: any) => ensureUrl(b?.image)),
   };
+
   // Services
   const servicesBlock = blocks.find((b: any) => b.type === "services_section");
   const services = (servicesBlock?.data?.services || []).map((s: any) => ({
-    id: s.id || "",
     title: s.title || "",
     desc: stripHtml(s.short_description || s.long_description || ""),
     link: s.slug ? `/service/${s.slug}` : s.link ? s.link : "/service",
-    image: ensureUrl(s.featured_image || s.mobile_featured_image),
   }));
 
   // Blog
@@ -69,28 +65,22 @@ function mapApiToHomeDataStrict(apiJson: any): HomeData {
   const clientsTitle = clientsBlock?.data?.title || "";
   const clientsSubtitle = clientsBlock?.data?.subtitle || "";
 
-  // Testimonials with section data
+  // Testimonials
   const testimonialsBlock = blocks.find((b: any) => b.type === "testimonials_section");
-  const testimonials = {
-    items: (testimonialsBlock?.data?.items || []).map((t: any) => ({
-      text: t.quote || "",
-      author: t.author || t.item_author || "",
-      avatar: ensureUrl(t.avatar),
-      rating: t.rating || "5",
-    })),
-    left_text: testimonialsBlock?.data?.left_text || "Building Trust Through Results",
-    right_text: testimonialsBlock?.data?.right_text || "Testimonials",
-    right_subtext: testimonialsBlock?.data?.right_subtext || "Client Success Stories: Hear What They Say",
-  };
+  const testimonials = (testimonialsBlock?.data?.items || []).map((t: any) => ({
+    text: t.quote || "",
+    author: t.author || t.item_author || "",
+    avatar: ensureUrl(t.avatar),
+  }));
 
-  // CTA Section - try to get from cta_section first, fallback to banner data
+  // CTA Section
   const ctaBlock = blocks.find((b: any) => b.type === "cta_section");
   const cta = {
-    subtext: ctaBlock?.data?.subtext || "Don't let finance and tax problems hold you back. At VGC Advisors, we are committed to empowering your business with expert financial advice and tailored solutions. Contact us today to learn how we can help you thrive.",
-    cta_link: ctaBlock?.data?.cta_link || firstBanner?.cta_link || "tel:+1234567891",
-    cta_text: ctaBlock?.data?.cta_text || firstBanner?.cta_text || "Make a Call +123 456 7891",
-    top_heading: ctaBlock?.data?.top_heading || "Get Started Today!",
-    main_heading: ctaBlock?.data?.main_heading || "Ready to Take Your Business to the Next Level?",
+    topHeading: ctaBlock?.data?.top_heading || "",
+    mainHeading: ctaBlock?.data?.main_heading || "",
+    subtext: ctaBlock?.data?.subtext || "",
+    ctaLink: ctaBlock?.data?.cta_link || "",
+    ctaText: ctaBlock?.data?.cta_text || "",
   };
 
   const footer = {
@@ -108,32 +98,34 @@ function mapApiToHomeDataStrict(apiJson: any): HomeData {
     clientsTitle,
     clientsSubtitle,
     testimonials,
-    footer,
     cta,
+    footer,
   } as HomeData;
 }
 
 export default async function Page() {
-  // 1) fetch API (server-side)
+  // Fetch both pages and settings data
   let json: any;
+  let settings: any;
+  
   try {
-    const res = await fetchWithTimeout(API_URL, { cache: "no-store" }, 10000);
-    if (!res.ok) {
-      // throw an error including the status so dev can see it
-      const text = await res.text().catch(() => "<no body>");
-      throw new Error(`API returned non-OK status ${res.status} - ${res.statusText}. Body: ${text}`);
+    const [pagesRes, settingsRes] = await Promise.all([
+      fetchWithTimeout(API_URL, { cache: 'force-cache' }, 10000),
+      fetchSettings()
+    ]);
+    
+    if (!pagesRes.ok) {
+      const text = await pagesRes.text().catch(() => "<no body>");
+      throw new Error(`Pages API returned non-OK status ${pagesRes.status} - ${pagesRes.statusText}. Body: ${text}`);
     }
-    json = await res.json();
+    
+    json = await pagesRes.json();
+    settings = settingsRes;
   } catch (err) {
-    // Rethrow with helpful message so the error shows during dev render (Turbopack/Next).
-    // In production, this will cause a 500 page — which is desired if you want to ensure data correctness.
-    // If you prefer graceful fallback, see my previous file.
-    // eslint-disable-next-line no-console
     console.error("[Home] API fetch failed:", err);
     throw err;
   }
 
-  // 2) map to HomeData (strict)
   let data: HomeData;
   try {
     data = mapApiToHomeDataStrict(json);
@@ -154,29 +146,27 @@ export default async function Page() {
   // 3) render using the mapped data
   return (
     <>
-      <Header />
+      <Header data={settings?.data?.header} />
       <HeroCarousel hero={data.hero} />
       <Services services={data.services} />
       <Blog items={data.blog} />
       <Clients items={data.clients} title={data.clientsTitle} subtitle={data.clientsSubtitle} />
-      <Testimonials testimonials={data.testimonials} />
+      <Testimonials items={data.testimonials} />
 
       <div className="ready-sec">
         <div className="container">
           <div className="row">
             <div className="col-lg-12 col-md-12" data-aos="fade-left" data-aos-duration="1200">
-              <h3>{data.cta.top_heading}</h3>
-              <h2>{data.cta.main_heading}</h2>
-              <p>
-                {data.cta.subtext}
-              </p>
-              <a href={data.cta.cta_link}>{data.cta.cta_text}</a>
+              <h3>{data.cta.topHeading}</h3>
+              <h2>{data.cta.mainHeading}</h2>
+              <p>{data.cta.subtext}</p>
+              <a href={data.cta.ctaLink}>{data.cta.ctaText}</a>
             </div>
           </div>
         </div>
       </div>
 
-      <Footer footer={data.footer} />
+      <Footer data={settings?.data?.footer} />
     </>
   );
 }
