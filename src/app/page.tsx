@@ -74,6 +74,16 @@ function mapApiToHomeDataStrict(apiJson: any): HomeData {
     avatar: ensureUrl(t.avatar),
   }));
 
+  // CTA Section
+  const ctaBlock = blocks.find((b: any) => b.type === "cta_section");
+  const cta = {
+    topHeading: ctaBlock?.data?.top_heading || "",
+    mainHeading: ctaBlock?.data?.main_heading || "",
+    subtext: ctaBlock?.data?.subtext || "",
+    ctaLink: ctaBlock?.data?.cta_link || "",
+    ctaText: ctaBlock?.data?.cta_text || "",
+  };
+
   const footer = {
     phone: "", 
     email: "",
@@ -89,31 +99,26 @@ function mapApiToHomeDataStrict(apiJson: any): HomeData {
     clientsTitle,
     clientsSubtitle,
     testimonials,
+    cta,
     footer,
   } as HomeData;
 }
 
 export default async function Page() {
-  // 1) fetch API (server-side)
   let json: any;
   try {
     const res = await fetchWithTimeout(API_URL, { cache: "no-store" }, 10000);
     if (!res.ok) {
-      // throw an error including the status so dev can see it
       const text = await res.text().catch(() => "<no body>");
       throw new Error(`API returned non-OK status ${res.status} - ${res.statusText}. Body: ${text}`);
     }
     json = await res.json();
   } catch (err) {
-    // Rethrow with helpful message so the error shows during dev render (Turbopack/Next).
-    // In production, this will cause a 500 page — which is desired if you want to ensure data correctness.
-    // If you prefer graceful fallback, see my previous file.
-    // eslint-disable-next-line no-console
+   
     console.error("[Home] API fetch failed:", err);
     throw err;
   }
 
-  // 2) map to HomeData (strict)
   let data: HomeData;
   try {
     data = mapApiToHomeDataStrict(json);
@@ -145,12 +150,10 @@ export default async function Page() {
         <div className="container">
           <div className="row">
             <div className="col-lg-12 col-md-12" data-aos="fade-left" data-aos-duration="1200">
-              <h3>Get Started Today!</h3>
-              <h2>Ready to Take Your Business to the Next Level?</h2>
-              <p>
-                Don't let finance and tax problems hold you back. At VGC Advisors, we are committed to empowering your business with expert financial advice and tailored solutions. Contact us today to learn how we can help you thrive.
-              </p>
-              <a href={`tel:${data.hero.phone}`}>Make a Call {data.hero.phone}</a>
+              <h3>{data.cta.topHeading}</h3>
+              <h2>{data.cta.mainHeading}</h2>
+              <p>{data.cta.subtext}</p>
+              <a href={data.cta.ctaLink}>{data.cta.ctaText}</a>
             </div>
           </div>
         </div>

@@ -40,6 +40,14 @@ export type Testimonial = {
   avatar: string;
 };
 
+export type CtaSection = {
+  topHeading: string;
+  mainHeading: string;
+  subtext: string;
+  ctaLink: string;
+  ctaText: string;
+};
+
 export type FooterData = {
   phone: string;
   email: string;
@@ -55,5 +63,6 @@ export type HomeData = {
   clientsTitle?: string;
   clientsSubtitle?: string;
   testimonials: Testimonial[];
+  cta: CtaSection;
   footer: FooterData;
 };
