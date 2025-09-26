@@ -107,7 +107,7 @@ function mapApiToHomeDataStrict(apiJson: any): HomeData {
 export default async function Page() {
   let json: any;
   try {
-    const res = await fetchWithTimeout(API_URL, { cache: "no-store" }, 10000);
+    const res = await fetchWithTimeout(API_URL, { next: { revalidate: 3600 } }, 10000);
     if (!res.ok) {
       const text = await res.text().catch(() => "<no body>");
       throw new Error(`API returned non-OK status ${res.status} - ${res.statusText}. Body: ${text}`);
