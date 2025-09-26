@@ -13,7 +13,7 @@ interface ServiceDetailProps {
 // Fetch service data from API and parse offerings
 async function getServiceData(slug: string) {
   try {
-    const res = await fetchWithTimeout(API_URL, { cache: "no-store" }, 10000);
+    const res = await fetchWithTimeout(API_URL, { cache: 'force-cache' }, 10000);
     if (!res.ok) {
       throw new Error(`API returned status ${res.status}`);
     }
@@ -205,7 +205,7 @@ export default async function ServiceDetailPage({ params }: ServiceDetailProps) 
 // Generate static params for all services (optional, for better performance)
 export async function generateStaticParams() {
   try {
-    const res = await fetchWithTimeout(API_URL, { cache: "no-store" }, 10000);
+    const res = await fetchWithTimeout(API_URL, { cache: 'force-cache' }, 10000);
     if (!res.ok) return [];
     
     const json = await res.json();

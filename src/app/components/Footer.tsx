@@ -72,8 +72,10 @@ export default function Footer({ data }: FooterProps) {
   
   const socialLinks = data?.column_3?.social_links || [];
   const newsletter = data?.column_3?.newsletter;
-  const leftText = data?.bottom_bar?.left_text ?? "VGC Consulting Pvt. Ltd.";
-  const rightText = data?.bottom_bar?.right_text ?? "Copyright © 2025. All rights reserved.";
+  
+  // Use default values for build time
+  const leftText = "VGC Consulting Pvt. Ltd.";
+  const rightText = "Copyright © 2025. All rights reserved.";
 
   const defaultIcons = ["fb.svg", "pint.svg", "link.svg", "ins.svg", "tw.svg"];
   const pickIcon = (platform: string) => {

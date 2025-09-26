@@ -160,7 +160,7 @@ export default async function AboutPage() {
           <h1>About</h1>
           <p>Sorry — about page content is currently unavailable.</p>
         </main>
-        <Footer data={settings?.data?.footer} />
+        <Footer data={settings?.data?.footer || null} />
       </>
     );
   }
@@ -219,7 +219,7 @@ export default async function AboutPage() {
         </div>
       </div>
 
-      <Footer data={settings?.data?.footer} />
+      <Footer data={settings?.data?.footer || null} />
     </>
   );
 }

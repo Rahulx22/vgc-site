@@ -106,13 +106,10 @@ function mapApiToHomeDataStrict(apiJson: any): HomeData {
 export default async function Page() {
   // Fetch both pages and settings data
   let json: any;
-  let settings: any;
+  let settings: any = null;
   
   try {
-    const [pagesRes, settingsRes] = await Promise.all([
-      fetchWithTimeout(API_URL, { cache: 'force-cache' }, 10000),
-      fetchSettings()
-    ]);
+    const pagesRes = await fetchWithTimeout(API_URL, { cache: 'force-cache' }, 10000);
     
     if (!pagesRes.ok) {
       const text = await pagesRes.text().catch(() => "<no body>");
@@ -120,7 +117,14 @@ export default async function Page() {
     }
     
     json = await pagesRes.json();
-    settings = settingsRes;
+    
+    // Try to fetch settings, but don't fail if it's not available
+    try {
+      settings = await fetchSettings();
+    } catch (settingsErr) {
+      console.warn("[Home] Settings API not available during build:", settingsErr);
+      settings = null;
+    }
   } catch (err) {
     console.error("[Home] API fetch failed:", err);
     throw err;
@@ -166,7 +170,7 @@ export default async function Page() {
         </div>
       </div>
 
-      <Footer data={settings?.data?.footer} />
+      <Footer data={settings?.data?.footer || null} />
     </>
   );
 }
