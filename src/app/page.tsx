@@ -8,17 +8,27 @@ import Testimonials from "./components/Testimonials";
 import Footer from "./components/Footer";
 
 import type { HomeData } from "../types/home";
-import { fetchWithTimeout, ensureUrl, stripHtml, API_URL, fetchSettings } from "../lib/api";
-/**
- * Map API response -> HomeData
- * Throws if shape is unexpected so dev can see the error.
- */
+import { fetchWithTimeout, ensureUrl, stripHtml, API_URL } from "../lib/api";
+
+// Always fresh
+export const revalidate = 0;
+
+// ---- helper: split "12+" / "15%" -> { value: 12, suffix: "+", display: "12+" }
+function splitCount(raw: any) {
+  const str = String(raw ?? "").trim();
+  const m = str.match(/^(\d+(?:\.\d+)?)(.*)$/);
+  return {
+    value: m ? Number(m[1]) : null,
+    suffix: m ? m[2].trim() : "",
+    display: str,
+  };
+}
+
+/** Map API -> HomeData (strict) */
 function mapApiToHomeDataStrict(apiJson: any): HomeData {
   const pages = Array.isArray(apiJson?.data) ? apiJson.data : [];
   const homePage = pages.find((p: any) => p.slug === "homepage");
-  if (!homePage) {
-    throw new Error("API shape unexpected: no page with slug 'homepage' found");
-  }
+  if (!homePage) throw new Error("API shape unexpected: no page with slug 'homepage' found");
 
   const blocks = Array.isArray(homePage.blocks) ? homePage.blocks : [];
 
@@ -26,13 +36,30 @@ function mapApiToHomeDataStrict(apiJson: any): HomeData {
   const bannerBlock = blocks.find((b: any) => b.type === "banner_slider_section");
   const bannersRaw = bannerBlock?.data?.banners || [];
   const firstBanner = bannersRaw[0] || {};
+
+  const countersRaw = Array.isArray(firstBanner?.statics) ? firstBanner.statics : [];
+  const counters = countersRaw
+    .map((s: any) => {
+      const { value, suffix, display } = splitCount(s?.count_percent);
+      return {
+        label: String(s?.text ?? "").trim(),
+        value,
+        suffix,
+        display,
+      };
+    })
+    .filter((c) => c.label && (c.value !== null || c.display));
+
   const hero = {
     title: firstBanner?.title ?? "",
     paragraphs: firstBanner?.subtitle
-      ? String(firstBanner.subtitle).split(/\n{2,}/).map((s: string) => s.trim()).filter(Boolean)
+      ? String(firstBanner.subtitle)
+          .split(/\n{2,}/)
+          .map((s: string) => s.trim())
+          .filter(Boolean)
       : [],
     phone: (firstBanner?.cta_link || "").replace(/^tel:/, ""),
-    counters: [], 
+    counters,
     banners: bannersRaw.map((b: any) => ensureUrl(b?.image)),
   };
 
@@ -48,7 +75,11 @@ function mapApiToHomeDataStrict(apiJson: any): HomeData {
   const blogBlock = blocks.find((b: any) => b.type === "blog_section");
   const blog = (blogBlock?.data?.blogs || []).map((b: any) => ({
     date: b.created_at
-      ? new Date(b.created_at).toLocaleDateString("en-GB", { day: "2-digit", month: "long", year: "numeric" })
+      ? new Date(b.created_at).toLocaleDateString("en-GB", {
+          day: "2-digit",
+          month: "long",
+          year: "numeric",
+        })
       : "",
     title: b.title || "",
     excerpt: stripHtml(b.short_description || ""),
@@ -70,8 +101,12 @@ function mapApiToHomeDataStrict(apiJson: any): HomeData {
   const testimonials = (testimonialsBlock?.data?.items || []).map((t: any) => ({
     text: t.quote || "",
     author: t.author || t.item_author || "",
+    rating: String(t.rating ?? "5"),
     avatar: ensureUrl(t.avatar),
   }));
+  const testimonialsLeftText = testimonialsBlock?.data?.left_text || "Building Trust Through Results";
+  const testimonialsRightText = testimonialsBlock?.data?.right_text || "Testimonials";
+  const testimonialsRightSubtext = testimonialsBlock?.data?.right_subtext || "Client Success Stories: Hear What They Say";
 
   // CTA Section
   const ctaBlock = blocks.find((b: any) => b.type === "cta_section");
@@ -83,12 +118,7 @@ function mapApiToHomeDataStrict(apiJson: any): HomeData {
     ctaText: ctaBlock?.data?.cta_text || "",
   };
 
-  const footer = {
-    phone: "", 
-    email: "",
-    social: [],
-    copyright: "",
-  };
+  const footer = { phone: "", email: "", social: [], copyright: "" };
 
   return {
     hero,
@@ -98,31 +128,38 @@ function mapApiToHomeDataStrict(apiJson: any): HomeData {
     clientsTitle,
     clientsSubtitle,
     testimonials,
+    testimonialsLeftText,
+    testimonialsRightText,
+    testimonialsRightSubtext,
     cta,
     footer,
   } as HomeData;
 }
 
 export default async function Page() {
-  // Fetch both pages and settings data
+  // Fetch pages + settings
   let json: any;
   let settings: any = null;
-  
+
   try {
-    const pagesRes = await fetchWithTimeout(API_URL, { cache: 'force-cache' }, 10000);
-    
+    const pagesRes = await fetchWithTimeout(API_URL, { cache: "no-store" }, 10000);
     if (!pagesRes.ok) {
       const text = await pagesRes.text().catch(() => "<no body>");
       throw new Error(`Pages API returned non-OK status ${pagesRes.status} - ${pagesRes.statusText}. Body: ${text}`);
     }
-    
     json = await pagesRes.json();
-    
-    // Try to fetch settings, but don't fail if it's not available
+
     try {
-      settings = await fetchSettings();
-    } catch (settingsErr) {
-      console.warn("[Home] Settings API not available during build:", settingsErr);
+      const settingsRes = await fetch("https://vgc.psofttechnologies.in/api/v1/settings", {
+        cache: "no-store",
+      });
+      if (!settingsRes.ok) {
+        const text = await settingsRes.text().catch(() => "<no body>");
+        throw new Error(`Settings API non-OK ${settingsRes.status}: ${text}`);
+      }
+      settings = await settingsRes.json();
+    } catch (e) {
+      console.warn("[Home] Settings fetch failed:", e);
       settings = null;
     }
   } catch (err) {
@@ -130,24 +167,8 @@ export default async function Page() {
     throw err;
   }
 
-  let data: HomeData;
-  try {
-    data = mapApiToHomeDataStrict(json);
-  } catch (err) {
-    // mapping failure — include the raw JSON in the thrown error (stringified safely)
-    const safeJson = (() => {
-      try {
-        return JSON.stringify(json).slice(0, 2000); // limit length to avoid huge logs
-      } catch {
-        return "<could not stringify json>";
-      }
-    })();
-    // eslint-disable-next-line no-console
-    console.error("[Home] mapping failed:", err, safeJson);
-    throw new Error(`Mapping failed: ${(err as Error).message}. Raw API (truncated): ${safeJson}`);
-  }
+  const data = mapApiToHomeDataStrict(json);
 
-  // 3) render using the mapped data
   return (
     <>
       <Header data={settings?.data?.header} />
@@ -155,7 +176,12 @@ export default async function Page() {
       <Services services={data.services} />
       <Blog items={data.blog} />
       <Clients items={data.clients} title={data.clientsTitle} subtitle={data.clientsSubtitle} />
-      <Testimonials items={data.testimonials} />
+      <Testimonials
+        items={data.testimonials}
+        leftText={data.testimonialsLeftText}
+        rightText={data.testimonialsRightText}
+        rightSubtext={data.testimonialsRightSubtext}
+      />
 
       <div className="ready-sec">
         <div className="container">
