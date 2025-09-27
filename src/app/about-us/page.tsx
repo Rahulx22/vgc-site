@@ -1,11 +1,39 @@
 // app/about/page.tsx
 import React from "react";
-import Header from "./../components/Header";
-import Footer from "./../components/Footer";
 import InnerBanner from "./../components/InnerBanner";
 import AboutSection from "./../components/AboutSection";
 import WhyChooseSection from "./../components/WhyChooseSection";
 import TeamSection from "./../components/TeamSection";
+
+import * as NextCache from "next/cache";
+import { headers } from "next/headers";
+
+// Force fresh
+export const revalidate = 0;
+export const dynamic = "force-dynamic";
+
+const noStoreCompat =
+  (NextCache as any).noStore ??
+  (NextCache as any).unstable_noStore ??
+  (() => {});
+
+const STORAGE_BASE = "https://vgc.psofttechnologies.in/storage/";
+
+function mkImage(path?: string | null) {
+  if (!path) return null;
+  if (/^https?:\/\//i.test(path)) return path;
+  const clean = String(path).replace(/^\/+/, "");
+  const withBuilder = clean.startsWith("builder/") ? clean : `builder/${clean}`;
+  return `${STORAGE_BASE}${withBuilder}`;
+}
+
+function splitParagraphs(text?: string | null) {
+  if (!text) return [];
+  return String(text)
+    .split(/\n{2,}/)
+    .map((p) => p.trim())
+    .filter(Boolean);
+}
 
 type ApiResponse = {
   success: boolean;
@@ -19,55 +47,27 @@ type ApiResponse = {
   }>;
 };
 
-const API_URL = "https://vgc.psofttechnologies.in/api/v1/pages";
-const SETTINGS_URL = "https://vgc.psofttechnologies.in/api/v1/settings";
-const STORAGE_BASE = "https://vgc.psofttechnologies.in/storage/";
-
-function mkImage(path?: string | null) {
-  if (!path) return null;
-
-  if (path.startsWith("http://") || path.startsWith("https://")) return path;
-
-  const clean = path.replace(/^\/+/, "");
-
-  const withBuilder = clean.startsWith("builder/") ? clean : `builder/${clean}`;
-
-  return `${STORAGE_BASE}${withBuilder}`;
-}
-
-function splitParagraphs(text?: string | null) {
-  if (!text) return [];
-  return text
-    .split(/\n{2,}/)
-    .map((p) => p.trim())
-    .filter(Boolean);
-}
-
-async function fetchSettings() {
-  try {
-    const res = await fetch(SETTINGS_URL, { cache: 'force-cache' });
-    if (!res.ok) {
-      return null;
-    }
-    return await res.json();
-  } catch (err) {
-    console.error("[Settings] API fetch failed:", err);
-    return null;
-  }
-}
-
 async function fetchAboutPage() {
-  const res = await fetch(API_URL, { cache: 'force-cache' });
-  if (!res.ok) {
-    return null;
-  }
+  noStoreCompat();
+
+  const h = headers();
+  const host = h.get("x-forwarded-host") || h.get("host");
+  const proto = h.get("x-forwarded-proto") || "http";
+  const base = `${proto}://${host}`;
+
+  const res = await fetch(`${base}/api/pages`, { cache: "no-store" });
+  if (!res.ok) throw new Error(`Pages API returned ${res.status}`);
+
   const payload = (await res.json()) as ApiResponse;
 
-  const aboutPage = payload.data.find((p) => p.type === "about" || p.slug === "about");
+  const aboutPage =
+    payload.data.find((p) => p.type === "about" || p.slug === "about") ?? null;
   if (!aboutPage) return null;
 
-  const getBlock = (type: string) => aboutPage.blocks.find((b) => b.type === type)?.data ?? null;
+  const getBlock = (type: string) =>
+    aboutPage.blocks.find((b) => b.type === type)?.data ?? null;
 
+  // Banner
   const bannerBlock = getBlock("banner_slider_section");
   const banner = (bannerBlock?.banners && bannerBlock.banners[0]) || null;
   const bannerData = {
@@ -78,24 +78,29 @@ async function fetchAboutPage() {
     image: mkImage(banner?.image ?? bannerBlock?.image ?? null),
   };
 
+  // About content
   const aboutBlock = getBlock("about_section");
   const about = {
     title: aboutBlock?.left_heading ?? aboutBlock?.heading ?? "About Us",
-    paragraphs: splitParagraphs(aboutBlock?.left_description ?? aboutBlock?.description),
-    image: mkImage(aboutBlock?.right_image ?? aboutBlock?.right_image),
+    paragraphs: splitParagraphs(
+      aboutBlock?.left_description ?? aboutBlock?.description
+    ),
+    image: mkImage(aboutBlock?.right_image ?? aboutBlock?.left_image ?? null),
   };
 
+  // Why choose
   const whyBlock = getBlock("why_choose_us_section");
   const whyChoose = {
     title: whyBlock?.heading ?? "Why Choose",
     subtitle: whyBlock?.subtext ?? "VGC Advisors",
     features:
-      Array.isArray(whyBlock?.items) &&
-      whyBlock.items.map((it: any) => ({
-        icon: mkImage(it.icon),
-        title: it.title,
-        description: it.description,
-      })) || [],
+      Array.isArray(whyBlock?.items)
+        ? whyBlock.items.map((it: any) => ({
+            icon: mkImage(it.icon),
+            title: it.title ?? "",
+            description: it.description ?? "",
+          }))
+        : [],
   };
 
   const believeBlock = getBlock("what_we_believe_section");
@@ -111,12 +116,13 @@ async function fetchAboutPage() {
   const team = {
     title: "Our Team",
     members:
-      Array.isArray(teamBlock?.members) &&
-      teamBlock.members.map((m: any) => ({
-        name: m.name,
-        image: mkImage(m.photo ?? m.image),
-        bio: m.description ?? m.bio ?? "",
-      })) || [],
+      Array.isArray(teamBlock?.members)
+        ? teamBlock.members.map((m: any) => ({
+            name: m.name ?? "",
+            image: mkImage(m.photo ?? m.image),
+            bio: m.description ?? m.bio ?? "",
+          }))
+        : [],
   };
 
   const globalBlock = getBlock("global_presence_section");
@@ -129,46 +135,30 @@ async function fetchAboutPage() {
   const ctaBlock = getBlock("cta_section");
   const cta = {
     title: ctaBlock?.top_heading ?? "Get Started Today!",
-    subtitle: ctaBlock?.main_heading ?? "Let's Build Your Business Success Story — Together",
+    subtitle:
+      ctaBlock?.main_heading ?? "Let's Build Your Business Success Story — Together",
     description: ctaBlock?.subtext ?? "",
     phone: ctaBlock?.cta_link ?? "tel:+1234567891",
     ctaText: ctaBlock?.cta_text ?? "Contact Us Today",
   };
 
-  return {
-    banner: bannerData,
-    about,
-    whyChoose,
-    beliefs,
-    team,
-    globalPresence,
-    cta,
-  };
+  return { banner: bannerData, about, whyChoose, beliefs, team, globalPresence, cta };
 }
 
 export default async function AboutPage() {
-  const [data, settings] = await Promise.all([
-    fetchAboutPage(),
-    fetchSettings()
-  ]);
+  const data = await fetchAboutPage();
 
   if (!data) {
     return (
-      <>
-        <Header data={settings?.data?.header} />
-        <main className="container py-8">
-          <h1>About</h1>
-          <p>Sorry — about page content is currently unavailable.</p>
-        </main>
-        <Footer data={settings?.data?.footer || null} />
-      </>
+      <main className="container py-8">
+        <h1>About</h1>
+        <p>Sorry — about page content is currently unavailable.</p>
+      </main>
     );
   }
 
   return (
     <>
-      <Header data={settings?.data?.header} />
-
       <InnerBanner
         title={data.banner.title}
         breadcrumb={[
@@ -186,14 +176,17 @@ export default async function AboutPage() {
         imageAlt="about-img"
       />
 
-      <WhyChooseSection title={data.whyChoose.subtitle ?? "Why Choose"} features={data.whyChoose.features} />
+      <WhyChooseSection
+        title={data.whyChoose.subtitle ?? "Why Choose"}
+        features={data.whyChoose.features}
+      />
 
       <AboutSection
         title={data.beliefs.title}
         paragraphs={data.beliefs.paragraphs}
         image={data.beliefs.image ?? "/images/about-img1.webp"}
         imageAlt="about-img1"
-        reverse={true}
+        reverse
         className="dd"
       />
 
@@ -209,17 +202,19 @@ export default async function AboutPage() {
       <div className="ready-sec">
         <div className="container">
           <div className="row">
-            <div className="col-xl-10 col-lg-12 col-md-12 offset-xl-1" data-aos="fade-left" data-aos-duration="1200">
+            <div
+              className="col-xl-10 col-lg-12 col-md-12 offset-xl-1"
+              data-aos="fade-left"
+              data-aos-duration="1200"
+            >
               <h3>{data.cta.title}</h3>
               <h2>{data.cta.subtitle}</h2>
               <p>{data.cta.description}</p>
-              <a href={data.cta.phone ?? "tel:+1234567891"}>{data.cta.ctaText ?? "Contact Us Today"}</a>
+              <a href={data.cta.phone}>{data.cta.ctaText}</a>
             </div>
           </div>
         </div>
       </div>
-
-      <Footer data={settings?.data?.footer || null} />
     </>
   );
 }

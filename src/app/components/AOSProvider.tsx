@@ -17,9 +17,7 @@ export default function AOSProvider({ children }: { children: React.ReactNode })
   }, []);
 
   useEffect(() => {
-    // re-run on route change so newly mounted elements get animated
     AOS.refreshHard();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pathname]);
 
   return children as React.ReactElement;

@@ -1,22 +1,117 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import Header from "../components/Header";
-import Footer from "../components/Footer";
-import serviceData from "../../data/service.json";
 
+type CMSBlock =
+  | {
+      type: "banner_slider_section";
+      data: {
+        banners: Array<{
+          image: string;
+          title: string | null;
+          subtitle?: string | null;
+          cta_link?: string | null;
+          cta_text?: string | null;
+          statics?: Array<{ text: string | null; count_percent: string | null }>;
+        }>;
+      };
+    }
+  | {
+      type: "personal_note_section";
+      data: {
+        title?: string | null;
+        position?: string | null;
+        signature?: string | null;
+        description?: string | null;
+      };
+    }
+  | {
+      type: "services_section";
+      data: {
+        title?: string | null;
+        subtitle?: string | null;
+        show_all?: boolean;
+        services?: Array<{
+          id: number;
+          title: string;
+          slug: string;
+          short_description?: string | null;
+          sub_heading?: string | null;
+          long_description?: string | null;
+          featured_image?: string | null;
+          mobile_featured_image?: string | null;
+          status?: string;
+        }>;
+      };
+    }
+  | {
+      type: string;
+      data: any;
+    };
+
+type CMSPage = {
+  id: number;
+  title: string;
+  slug: string;
+  type: string;
+  blocks: CMSBlock[];
+};
+
+type CMSResponse = {
+  success: boolean;
+  message: string;
+  data: CMSPage[];
+};
+
+// ---------- Helpers ----------
+const API_URL = "https://vgc.psofttechnologies.in/api/v1/pages";
+const STORAGE_BASE =
+  process.env.NEXT_PUBLIC_CMS_STORAGE_BASE ||
+  "https://vgc.psofttechnologies.in/storage";
+
+function assetUrl(path?: string | null): string {
+  if (!path) return "";
+  const p = path.startsWith("/") ? path.slice(1) : path;
+  if (/^https?:\/\//i.test(p)) return p;
+  return `${STORAGE_BASE}/${p}`;
+}
+
+/** Strip HTML tags + entities and collapse whitespace. */
+function toPlainText(html?: string | null): string {
+  if (!html) return "";
+  // remove tags
+  let text = html.replace(/<[^>]+>/g, " ");
+  // decode a few common entities
+  text = text
+    .replace(/&nbsp;/g, " ")
+    .replace(/&amp;/g, "&")
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">");
+  // collapse whitespace/newlines/tabs
+  return text.replace(/\s+/g, " ").trim();
+}
+
+/** Make a clean short excerpt without odd line breaks. */
+function excerpt(s: string, maxLen = 120): string {
+  if (s.length <= maxLen) return s;
+  const cut = s.slice(0, maxLen);
+  const lastSpace = cut.lastIndexOf(" ");
+  return (lastSpace > 60 ? cut.slice(0, lastSpace) : cut).trim() + "…";
+}
+
+// ---------- Component ----------
 export default function ServicePage() {
+  // ---- Static (keep form as-is) ----
   const [formData, setFormData] = useState({
     name: "",
     phone: "",
     service: "",
-    message: ""
+    message: "",
   });
-
-// AOS globally initialized in AOSProvider
-
 
   const handleChange = (
     e:
@@ -25,7 +120,7 @@ export default function ServicePage() {
       | React.ChangeEvent<HTMLSelectElement>
   ) => {
     const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
+    setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -33,14 +128,115 @@ export default function ServicePage() {
     console.log("form", formData);
   };
 
+  // ---- Dynamic (from API) ----
+  const [loading, setLoading] = useState(true);
+  const [err, setErr] = useState<string | null>(null);
+  const [page, setPage] = useState<CMSPage | null>(null);
+
+  useEffect(() => {
+    let mounted = true;
+    (async () => {
+      try {
+        setLoading(true);
+        setErr(null);
+
+        const res = await fetch(API_URL, { cache: "no-store" });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const json: CMSResponse = await res.json();
+
+        const servicesPage =
+          json?.data?.find((p) => p.slug === "services") ||
+          json?.data?.find((p) => p.type === "services") ||
+          null;
+
+        if (!servicesPage) throw new Error("Services page not found");
+        if (mounted) setPage(servicesPage);
+      } catch (e: any) {
+        if (mounted) setErr(e?.message || "Failed to load data");
+      } finally {
+        if (mounted) setLoading(false);
+      }
+    })();
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  // Pick blocks we care about
+  const banner = useMemo(() => {
+    const block = page?.blocks?.find((b) => b.type === "banner_slider_section") as Extract<
+      CMSBlock,
+      { type: "banner_slider_section" }
+    > | undefined;
+    const first = block?.data?.banners?.[0];
+    return first
+      ? {
+          title: first.title || "Our Expertise, Your Growth",
+          description:
+            first.subtitle ||
+            "Comprehensive business, tax, and compliance solutions tailored to empower MSMEs, corporates, and global ventures — delivered with precision, integrity, and strategic insight.",
+          image: assetUrl(first.image) || "/images/service-banner.webp",
+          alt: "service-banner",
+        }
+      : {
+          title: "Our Expertise, Your Growth",
+          description:
+            "Comprehensive business, tax, and compliance solutions tailored to empower MSMEs, corporates, and global ventures — delivered with precision, integrity, and strategic insight.",
+          image: "/images/service-banner.webp",
+          alt: "service-banner",
+        };
+  }, [page]);
+
+  const founderNote = useMemo(() => {
+    const block = page?.blocks?.find((b) => b.type === "personal_note_section") as Extract<
+      CMSBlock,
+      { type: "personal_note_section" }
+    > | undefined;
+
+    return {
+      title: block?.data?.title || "A Personal Note from Our Founder & CEO",
+      description:
+        block?.data?.description ||
+        "With a vision to empower MSMEs and a commitment to integrity, innovation, and client success, I lead VGC Advisors with the belief that your growth is our greatest achievement.",
+      signature: assetUrl(block?.data?.signature) || "/images/sign.svg",
+      name: block?.data?.position || "Founder & Senior Of VGC Consultancy",
+    };
+  }, [page]);
+
+  const servicesSection = useMemo(() => {
+    const block = page?.blocks?.find((b) => b.type === "services_section") as Extract<
+      CMSBlock,
+      { type: "services_section" }
+    > | undefined;
+
+    const items =
+      block?.data?.services?.map((s) => {
+        const txt =
+          toPlainText(s.short_description) ||
+          toPlainText(s.sub_heading) ||
+          toPlainText(s.long_description);
+        return {
+          title: s.title,
+          slug: s.slug,
+          link: `/service/${s.slug}`,
+          summary: excerpt(txt || `Explore details about ${s.title}`),
+        };
+      }) ?? [];
+
+    return {
+      title: block?.data?.title || "A range of Services Provided by VGC",
+      items,
+    };
+  }, [page]);
+
+  // ---- Render ----
   return (
     <>
-      <Header />
-      
+      {/* Banner */}
       <div
         className="service-banner"
         style={{
-          backgroundImage: `url(${serviceData.banner.image})`,
+          backgroundImage: `url(${banner.image})`,
           backgroundSize: "cover",
           backgroundPosition: "center",
         }}
@@ -52,21 +248,25 @@ export default function ServicePage() {
               data-aos="fade-right"
               data-aos-duration="1200"
             >
-              <h1>{serviceData.banner.title}</h1>
-              <p>{serviceData.banner.description}</p>
+              <h1>{banner.title}</h1>
+              <p>{banner.description}</p>
             </div>
           </div>
         </div>
       </div>
 
+      {/* Form (static as requested) */}
       <div className="service-form">
         <div className="container">
           <div className="row align-items-start">
             <div className="col-xl-6 col-lg-6 col-md-12">
               <div className="serv-form" data-aos="fade-up" data-aos-duration="1200">
                 <div className="serv-head">
-                  <h3>{serviceData.form.title}</h3>
-                  <p>{serviceData.form.description}</p>
+                  <h3>Make Confident Decisions with VGC Advisors</h3>
+                  <p>
+                    Our seasoned professionals provide clear, practical, and result-driven advice
+                    for your business journey.
+                  </p>
                 </div>
 
                 <form onSubmit={handleSubmit}>
@@ -101,7 +301,14 @@ export default function ServicePage() {
                       required
                     >
                       <option value="">Service</option>
-                      {serviceData.services.items.map((s, i) => (
+                      {(servicesSection.items.length
+                        ? servicesSection.items
+                        : [
+                            { title: "Business Support", slug: "business-support", link: "#" },
+                            { title: "Direct Tax Services", slug: "direct-tax", link: "#" },
+                            { title: "Indirect Tax Services", slug: "indirect-tax", link: "#" },
+                          ]
+                      ).map((s, i) => (
                         <option key={i} value={s.title}>
                           {s.title}
                         </option>
@@ -127,12 +334,12 @@ export default function ServicePage() {
             </div>
 
             <div className="col-xl-5 col-lg-6 col-md-12 offset-xl-1">
-              <h2>{serviceData.founderNote.title}</h2>
-              <p>{serviceData.founderNote.description}</p>
+              <h2>{founderNote.title}</h2>
+              <p>{founderNote.description}</p>
               <div style={{ margin: "14px 0" }}>
-                <Image src={serviceData.founderNote.signature} alt="sign" width={100} height={30} />
+                <img src={founderNote.signature} alt="sign" width={100} height={30} />
               </div>
-              <p>{serviceData.founderNote.name}</p>
+              <p>{founderNote.name}</p>
             </div>
           </div>
         </div>
@@ -142,10 +349,25 @@ export default function ServicePage() {
         <div className="container">
           <div className="row">
             <div className="col-xl-10 col-lg-12 col-md-12 offset-xl-1">
-              <h5>{serviceData.services.title}</h5>
+              <h5>
+                {loading ? "Loading services..." : err ? "Services" : servicesSection.title}
+              </h5>
+
+              {err && (
+                <p className="text-danger" style={{ marginBottom: 20 }}>
+                  {err}
+                </p>
+              )}
 
               <div className="row">
-                {serviceData.services.items.map((svc, idx) => (
+                {(loading
+                  ? Array.from({ length: 4 }).map((_, i) => ({
+                      title: "Loading...",
+                      link: "#",
+                      summary: "Please wait…",
+                    }))
+                  : servicesSection.items
+                ).map((svc, idx) => (
                   <div key={idx} className="col-lg-6 col-md-6">
                     <article className="serv-box" data-aos="zoom-in" data-aos-duration="1200">
                       <strong>
@@ -154,9 +376,7 @@ export default function ServicePage() {
 
                       <h3>{svc.title}</h3>
 
-                      {svc.description.map((d, di) => (
-                        <p key={di}>{d}</p>
-                      ))}
+                      <p>{svc.summary}</p>
 
                       <Link href={svc.link} className="read-btn">
                         Learn More
@@ -164,23 +384,17 @@ export default function ServicePage() {
                     </article>
                   </div>
                 ))}
+
+                {!loading && !err && servicesSection.items.length === 0 && (
+                  <div className="col-12">
+                    <p>No services available at the moment.</p>
+                  </div>
+                )}
               </div>
             </div>
           </div>
         </div>
       </div>
-
-      <Footer
-        footer={{
-          phone: "+123 456 789 100",
-          email: "hi@vGC@gmail.com",
-          social: ["#", "#", "#", "#", "#"],
-          copyright: "Copyright © 2025. All rights reserved."
-        }}
-      />
-
-      
-
     </>
   );
 }

@@ -2,28 +2,47 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import Script from "next/script";
 import AOSProvider from "./components/AOSProvider";
+import HeaderContainer from "./components/HeaderContainer";
+import FooterContainer from "./components/FooterContainer";
 import "./globals.css";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-});
+import * as NextCache from "next/cache";
+import { headers } from "next/headers";
 
 export const metadata: Metadata = {
   title: "VGC Consulting",
   description: "VGC Consulting website built with Next.js",
 };
 
-export default function RootLayout({
-  children,
-}: Readonly<{
-  children: React.ReactNode;
-}>) {
+export const revalidate = 0;
+export const dynamic = "force-dynamic";
+
+const noStoreCompat =
+  // @ts-ignore
+  (NextCache as any).noStore ??
+  // @ts-ignore
+  (NextCache as any).unstable_noStore ??
+  (() => {});
+
+async function fetchSettingsOnce() {
+  noStoreCompat();
+
+  const h = headers();
+  const host = h.get("x-forwarded-host") || h.get("host");
+  const proto = h.get("x-forwarded-proto") || "http";
+  const base = `${proto}://${host}`;
+
+  const res = await fetch(`${base}/api/config`, { cache: "no-store" });
+  if (!res.ok) throw new Error(`Settings fetch failed: ${res.status}`);
+  return res.json();
+}
+
+const geistSans = Geist({ variable: "--font-geist-sans", subsets: ["latin"] });
+const geistMono = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin"] });
+
+export default async function RootLayout({ children }: { children: React.ReactNode }) {
+  const settings = await fetchSettingsOnce();
+
   return (
     <html lang="en">
       <head>
@@ -37,7 +56,11 @@ export default function RootLayout({
         <link href="/images/fav.webp" rel="icon" />
       </head>
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
-        <AOSProvider>{children}</AOSProvider>
+        <AOSProvider>
+          <HeaderContainer initial={settings} />
+          {children}
+          <FooterContainer initial={settings} />
+        </AOSProvider>
 
         <Script src="https://unpkg.com/aos@2.3.1/dist/aos.js" strategy="afterInteractive" />
         <Script src="https://code.jquery.com/jquery-3.7.1.min.js" strategy="afterInteractive" />

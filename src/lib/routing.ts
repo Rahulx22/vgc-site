@@ -1,4 +1,5 @@
 // lib/routing.ts
+export const dynamic = "force-dynamic";
 export type PageLite = { title?: string; slug?: string; type?: string };
 export type NavItem = { label: string; url: string; is_external: boolean; order: number };
 
@@ -53,7 +54,7 @@ export function matchPageForNav(
   // 3) heuristics for typical pairs
   const heuristics: Record<string, string> = {
     "about-us": "about",
-    "our-services": "services",
+    "our-services": "service",
     "contact-us": "contact",
     "blogs": "blog",
     "home": "homepage",

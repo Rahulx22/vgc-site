@@ -1,131 +1,144 @@
 "use client";
 
-import React, { useEffect, useRef, useState, useMemo } from "react";
+import React, { useEffect, useMemo, useRef, useState, useCallback } from "react";
 import Link from "next/link";
 import Image from "next/image";
 
-type NavigationItem = {
+/* ----------------------------- Types & Guards ----------------------------- */
+export type NavigationItem = {
   label: string;
   url: string;
   is_external: boolean;
   order: number;
 };
 
-type HeaderData = {
-  logo: string; // "builder/header/xxx.png"
+export type HeaderData = {
+  logo: string; 
   navigation: NavigationItem[];
   button: { text: string; link: string };
 };
 
-type ApiShape = {
+export type ApiShape = {
   success: boolean;
   data: { header: HeaderData };
 };
 
-type HeaderProps = { data?: HeaderData | ApiShape | null };
+type MiddleShape = { header?: HeaderData; [k: string]: unknown };
 
+type HeaderProps = { data?: HeaderData | MiddleShape | ApiShape | null };
+
+const isHeaderData = (x: unknown): x is HeaderData =>
+  !!x &&
+  typeof x === "object" &&
+  Array.isArray((x as HeaderData).navigation) &&
+  typeof (x as HeaderData).button?.text === "string";
+
+const isApiShape = (x: unknown): x is ApiShape =>
+  !!x &&
+  typeof x === "object" &&
+  isHeaderData((x as ApiShape)?.data?.header);
+
+const isMiddleShape = (x: unknown): x is MiddleShape =>
+  !!x &&
+  typeof x === "object" &&
+  isHeaderData((x as MiddleShape)?.header);
+
+/* --------------------------------- Consts -------------------------------- */
+const STORAGE_BASE = "https://vgc.psofttechnologies.in/storage/";
+
+/* --------------------------------- Utils --------------------------------- */
+const normalizeUrl = (raw?: string) => {
+  if (!raw) return "/";
+  let url = raw.trim().replace(/\\/g, "");
+  if (/^https?:\/\//i.test(url)) return url; // absolute external
+  if (!url.startsWith("/")) url = `/${url}`; // force leading slash
+  if (url === "/home") return "/"; // map /home -> /
+  return url;
+};
+
+const isExternalItem = (item: NavigationItem) =>
+  item.is_external || /^https?:\/\//i.test(item.url || "");
+
+/* -------------------------------- Component ------------------------------- */
 export default function Header({ data }: HeaderProps) {
-  // ---- extract header from either shape
+  // Accept HeaderData | MiddleShape | ApiShape | null
   const header: HeaderData | null = useMemo(() => {
-    const maybeApi = data as ApiShape | undefined;
-    const maybeHeader = data as HeaderData | undefined;
-    if (maybeHeader?.navigation && Array.isArray(maybeHeader.navigation)) return maybeHeader;
-    if (maybeApi?.data?.header?.navigation) return maybeApi.data.header;
+    if (isHeaderData(data)) return data;
+    if (isMiddleShape(data)) return data.header!;
+    if (isApiShape(data)) return data.data.header;
     return null;
   }, [data]);
 
+  // Menu state + ref for scroll shrink
   const [menuOpen, setMenuOpen] = useState(false);
-  const [logoSrc, setLogoSrc] = useState<string>("/images/logo.svg");
   const headerRef = useRef<HTMLElement | null>(null);
 
-  const STORAGE_BASE = "https://vgc.psofttechnologies.in/storage/";
+  // Logo handling (with onError fallback)
+  const [logoSrc, setLogoSrc] = useState<string>("/images/logo.svg");
+  useEffect(() => {
+    setLogoSrc(header?.logo ? `${STORAGE_BASE}${header.logo}` : "/images/logo.svg");
+  }, [header?.logo]);
 
-  // ---- helpers
-  const normalizeUrl = (raw?: string) => {
-    if (!raw) return "/";
-    let url = raw.trim().replace(/\\/g, "");
-    // external absolute
-    if (/^https?:\/\//i.test(url)) return url;
-    // internal
-    if (!url.startsWith("/")) url = `/${url}`;
-    // map /home -> /
-    if (url === "/home") return "/";
-    // DO NOT touch slugs like '/about-us'
-    return url;
-  };
-
-  const isExternal = (item: NavigationItem) =>
-    item.is_external || /^https?:\/\//i.test(item.url || "");
-
-  // ---- derive data
+  // Derived navigation (sorted + filtered)
   const navigation: NavigationItem[] = useMemo(() => {
     if (header?.navigation?.length) {
-      // sort + filter invalid
-      const sorted = [...header.navigation]
+      return [...header.navigation]
         .filter((n) => !!n?.label && !!n?.url)
         .sort((a, b) => a.order - b.order);
-      // debug: verify what we render
-      
-      return sorted;
     }
-    // fallback ONLY if header missing
+    // Fallback when no header present
     return [
       { label: "Home", url: "/", is_external: false, order: 1 },
-      { label: "About", url: "/", is_external: false, order: 2 },
-      { label: "Services", url: "/services", is_external: false, order: 3 },
+      { label: "About", url: "/about-us", is_external: false, order: 2 },
+      { label: "Services", url: "/service", is_external: false, order: 3 },
       { label: "Blog", url: "/blog", is_external: false, order: 4 },
-      { label: "Contact", url: "/contact", is_external: false, order: 5 },
+      { label: "Career", url: "/career", is_external: false, order: 5 },
     ];
   }, [header?.navigation]);
 
   const buttonText = header?.button?.text ?? "Get Quote";
   const buttonHref = normalizeUrl(header?.button?.link ?? "/contact-us");
 
-  // ---- set logo safely
-  useEffect(() => {
-    if (header?.logo) {
-      setLogoSrc(`${STORAGE_BASE}${header.logo}`);
-    } else {
-      setLogoSrc("/images/logo.svg");
-    }
-  }, [header?.logo]);
-
-  // ---- shrink on scroll
+  // Shrink on scroll (passive + cleanup)
   useEffect(() => {
     const node = headerRef.current;
-    function onScroll() {
-      if (!node) return;
+    if (!node) return;
+
+    const onScroll = () => {
       if (window.scrollY > 50) node.classList.add("smaller");
       else node.classList.remove("smaller");
-    }
-    window.addEventListener("scroll", onScroll, { passive: true });
+    };
+
+    // Run once to set initial state
     onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
-  // ---- ESC to close
+  // ESC to close
   useEffect(() => {
-    function onKey(e: KeyboardEvent) {
+    const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") setMenuOpen(false);
-    }
+    };
     document.addEventListener("keydown", onKey);
     return () => document.removeEventListener("keydown", onKey);
   }, []);
 
-  // ---- lock body scroll on menu
+  // Lock body scroll when offcanvas open
   useEffect(() => {
+    const { style } = document.body;
     if (!menuOpen) {
-      document.body.style.overflow = "";
+      style.overflow = "";
       return;
     }
-    const prev = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
+    const prev = style.overflow;
+    style.overflow = "hidden";
     return () => {
-      document.body.style.overflow = prev || "";
+      style.overflow = prev || "";
     };
   }, [menuOpen]);
 
-  const closeMenu = () => setMenuOpen(false);
+  const closeMenu = useCallback(() => setMenuOpen(false), []);
 
   return (
     <header ref={headerRef}>
@@ -135,41 +148,33 @@ export default function Header({ data }: HeaderProps) {
             className="col-lg-12 col-md-12"
             style={{ alignItems: "center", display: "flex", justifyContent: "space-between" }}
           >
-            {/* Desktop logo (clamped height) */}
+            {/* Desktop logo */}
             <div className="d-none d-md-inline-flex" style={{ alignItems: "center" }}>
               <Link href="/" aria-label="Home">
                 <Image
                   src={logoSrc}
-                  alt="logo"
+                  alt="Company logo"
                   width={200}
                   height={80}
                   priority
                   unoptimized
-                  style={{
-                    height: "56px",
-                    width: "auto",
-                    objectFit: "contain",
-                  }}
+                  style={{ height: "56px", width: "auto", objectFit: "contain" }}
                   onError={() => setLogoSrc("/images/logo.svg")}
                 />
               </Link>
             </div>
 
-            {/* Mobile logo (tighter clamp) */}
+            {/* Mobile logo */}
             <div className="mob-logo d-md-none" style={{ display: "flex", alignItems: "center" }}>
               <Link href="/" aria-label="Home (mobile)">
                 <Image
                   src={logoSrc}
-                  alt="logo"
+                  alt="Company logo"
                   width={140}
                   height={44}
                   priority
                   unoptimized
-                  style={{
-                    height: "44px",
-                    width: "auto",
-                    objectFit: "contain",
-                  }}
+                  style={{ height: "44px", width: "auto", objectFit: "contain" }}
                   onError={() => setLogoSrc("/images/logo.svg")}
                 />
               </Link>
@@ -193,15 +198,22 @@ export default function Header({ data }: HeaderProps) {
               </button>
 
               {/* Desktop inline nav */}
-              <div className="navbar-collapse collapse d-none d-md-flex" id="navbarCollapse" style={{ marginLeft: "auto" }}>
-                <ul className="navbar-nav" style={{ display: "flex", gap: 12, alignItems: "center", marginLeft: "auto" }}>
+              <div
+                className="navbar-collapse collapse d-none d-md-flex"
+                id="navbarCollapse"
+                style={{ marginLeft: "auto" }}
+              >
+                <ul
+                  className="navbar-nav"
+                  style={{ display: "flex", gap: 12, alignItems: "center", marginLeft: "auto" }}
+                >
                   {navigation.map((item) => {
                     const href = normalizeUrl(item.url);
                     const key = `${item.order}-${item.label}`;
                     if (!href) return null;
                     return (
                       <li key={key} className="nav-item">
-                        {isExternal(item) ? (
+                        {isExternalItem(item) ? (
                           <a className="nav-link" href={href} target="_blank" rel="noopener noreferrer">
                             {item.label}
                           </a>
@@ -219,7 +231,7 @@ export default function Header({ data }: HeaderProps) {
 
             {/* CTA Button */}
             <div style={{ marginLeft: 20 }}>
-              <Link href={buttonHref} className="cont-btn">
+              <Link href={buttonHref} className="cont-btn" aria-label={buttonText}>
                 {buttonText}
               </Link>
             </div>
@@ -232,7 +244,7 @@ export default function Header({ data }: HeaderProps) {
         <div className="offcanvas-header">
           <div className="offcanvas-logo" aria-hidden="true" />
         </div>
-        <nav className="offcanvas-nav">
+        <nav className="offcanvas-nav" aria-label="Mobile">
           <ul>
             {navigation.map((item) => {
               const href = normalizeUrl(item.url);
@@ -240,7 +252,7 @@ export default function Header({ data }: HeaderProps) {
               if (!href) return null;
               return (
                 <li key={key}>
-                  {isExternal(item) ? (
+                  {isExternalItem(item) ? (
                     <a href={href} target="_blank" rel="noopener noreferrer" onClick={closeMenu}>
                       {item.label}
                     </a>

@@ -41,7 +41,7 @@ export function stripHtml(html = ""): string {
  */
 export async function fetchSettings() {
   try {
-    const res = await fetchWithTimeout(SETTINGS_URL, { cache: 'force-cache' }, 10000);
+    const res = await fetchWithTimeout(SETTINGS_URL, { cache: 'no-store' });
     if (!res.ok) {
       throw new Error(`Settings API returned ${res.status}`);
     }

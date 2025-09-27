@@ -1,30 +1,32 @@
 // app/page.tsx
-import Header from "./components/Header";
 import HeroCarousel from "./components/HeroCarousel";
 import Services from "./components/Services";
 import Blog from "./components/Blog";
 import Clients from "./components/Clients";
 import Testimonials from "./components/Testimonials";
-import Footer from "./components/Footer";
 
 import type { HomeData } from "../types/home";
-import { fetchWithTimeout, ensureUrl, stripHtml, API_URL } from "../lib/api";
+import { fetchWithTimeout, ensureUrl, stripHtml } from "../lib/api";
+import * as NextCache from "next/cache";
+import { headers } from "next/headers";
 
-// Always fresh
 export const revalidate = 0;
+export const dynamic = "force-dynamic";
 
-// ---- helper: split "12+" / "15%" -> { value: 12, suffix: "+", display: "12+" }
+// Compat shim for Next versions
+const noStoreCompat =
+  // @ts-ignore
+  (NextCache as any).noStore ??
+  // @ts-ignore
+  (NextCache as any).unstable_noStore ??
+  (() => {});
+
 function splitCount(raw: any) {
   const str = String(raw ?? "").trim();
   const m = str.match(/^(\d+(?:\.\d+)?)(.*)$/);
-  return {
-    value: m ? Number(m[1]) : null,
-    suffix: m ? m[2].trim() : "",
-    display: str,
-  };
+  return { value: m ? Number(m[1]) : null, suffix: m ? m[2].trim() : "", display: str };
 }
 
-/** Map API -> HomeData (strict) */
 function mapApiToHomeDataStrict(apiJson: any): HomeData {
   const pages = Array.isArray(apiJson?.data) ? apiJson.data : [];
   const homePage = pages.find((p: any) => p.slug === "homepage");
@@ -32,7 +34,6 @@ function mapApiToHomeDataStrict(apiJson: any): HomeData {
 
   const blocks = Array.isArray(homePage.blocks) ? homePage.blocks : [];
 
-  // Hero / banners
   const bannerBlock = blocks.find((b: any) => b.type === "banner_slider_section");
   const bannersRaw = bannerBlock?.data?.banners || [];
   const firstBanner = bannersRaw[0] || {};
@@ -41,12 +42,7 @@ function mapApiToHomeDataStrict(apiJson: any): HomeData {
   const counters = countersRaw
     .map((s: any) => {
       const { value, suffix, display } = splitCount(s?.count_percent);
-      return {
-        label: String(s?.text ?? "").trim(),
-        value,
-        suffix,
-        display,
-      };
+      return { label: String(s?.text ?? "").trim(), value, suffix, display };
     })
     .filter((c) => c.label && (c.value !== null || c.display));
 
@@ -63,7 +59,6 @@ function mapApiToHomeDataStrict(apiJson: any): HomeData {
     banners: bannersRaw.map((b: any) => ensureUrl(b?.image)),
   };
 
-  // Services
   const servicesBlock = blocks.find((b: any) => b.type === "services_section");
   const services = (servicesBlock?.data?.services || []).map((s: any) => ({
     title: s.title || "",
@@ -71,15 +66,10 @@ function mapApiToHomeDataStrict(apiJson: any): HomeData {
     link: s.slug ? `/service/${s.slug}` : s.link ? s.link : "/service",
   }));
 
-  // Blog
   const blogBlock = blocks.find((b: any) => b.type === "blog_section");
   const blog = (blogBlock?.data?.blogs || []).map((b: any) => ({
     date: b.created_at
-      ? new Date(b.created_at).toLocaleDateString("en-GB", {
-          day: "2-digit",
-          month: "long",
-          year: "numeric",
-        })
+      ? new Date(b.created_at).toLocaleDateString("en-GB", { day: "2-digit", month: "long", year: "numeric" })
       : "",
     title: b.title || "",
     excerpt: stripHtml(b.short_description || ""),
@@ -87,7 +77,6 @@ function mapApiToHomeDataStrict(apiJson: any): HomeData {
     link: b.slug ? `/blog/${b.slug}` : "/blog",
   }));
 
-  // Clients
   const clientsBlock = blocks.find((b: any) => b.type === "clients_logo_section");
   const clients = (clientsBlock?.data?.logos || []).map((c: any) => ({
     title: c.title || "",
@@ -96,7 +85,6 @@ function mapApiToHomeDataStrict(apiJson: any): HomeData {
   const clientsTitle = clientsBlock?.data?.title || "";
   const clientsSubtitle = clientsBlock?.data?.subtitle || "";
 
-  // Testimonials
   const testimonialsBlock = blocks.find((b: any) => b.type === "testimonials_section");
   const testimonials = (testimonialsBlock?.data?.items || []).map((t: any) => ({
     text: t.quote || "",
@@ -108,7 +96,6 @@ function mapApiToHomeDataStrict(apiJson: any): HomeData {
   const testimonialsRightText = testimonialsBlock?.data?.right_text || "Testimonials";
   const testimonialsRightSubtext = testimonialsBlock?.data?.right_subtext || "Client Success Stories: Hear What They Say";
 
-  // CTA Section
   const ctaBlock = blocks.find((b: any) => b.type === "cta_section");
   const cta = {
     topHeading: ctaBlock?.data?.top_heading || "",
@@ -137,41 +124,25 @@ function mapApiToHomeDataStrict(apiJson: any): HomeData {
 }
 
 export default async function Page() {
-  // Fetch pages + settings
-  let json: any;
-  let settings: any = null;
+  noStoreCompat(); // safe on all Next versions
 
-  try {
-    const pagesRes = await fetchWithTimeout(API_URL, { cache: "no-store" }, 10000);
-    if (!pagesRes.ok) {
-      const text = await pagesRes.text().catch(() => "<no body>");
-      throw new Error(`Pages API returned non-OK status ${pagesRes.status} - ${pagesRes.statusText}. Body: ${text}`);
-    }
-    json = await pagesRes.json();
+  // Build absolute base from incoming request (works on Vercel/proxy too)
+  const h = headers();
+  const host = h.get("x-forwarded-host") || h.get("host");
+  const proto = h.get("x-forwarded-proto") || "http";
+  const base = `${proto}://${host}`;
 
-    try {
-      const settingsRes = await fetch("https://vgc.psofttechnologies.in/api/v1/settings", {
-        cache: "no-store",
-      });
-      if (!settingsRes.ok) {
-        const text = await settingsRes.text().catch(() => "<no body>");
-        throw new Error(`Settings API non-OK ${settingsRes.status}: ${text}`);
-      }
-      settings = await settingsRes.json();
-    } catch (e) {
-      console.warn("[Home] Settings fetch failed:", e);
-      settings = null;
-    }
-  } catch (err) {
-    console.error("[Home] API fetch failed:", err);
-    throw err;
+  const pagesRes = await fetchWithTimeout(`${base}/api/pages`, { cache: "no-store" });
+  if (!pagesRes.ok) {
+    const text = await pagesRes.text().catch(() => "<no body>");
+    throw new Error(`Pages API returned non-OK ${pagesRes.status} - ${pagesRes.statusText}. Body: ${text}`);
   }
 
+  const json = await pagesRes.json();
   const data = mapApiToHomeDataStrict(json);
 
   return (
     <>
-      <Header data={settings?.data?.header} />
       <HeroCarousel hero={data.hero} />
       <Services services={data.services} />
       <Blog items={data.blog} />
@@ -182,7 +153,6 @@ export default async function Page() {
         rightText={data.testimonialsRightText}
         rightSubtext={data.testimonialsRightSubtext}
       />
-
       <div className="ready-sec">
         <div className="container">
           <div className="row">
@@ -195,8 +165,6 @@ export default async function Page() {
           </div>
         </div>
       </div>
-
-      <Footer data={settings?.data?.footer || null} />
     </>
   );
 }
