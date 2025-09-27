@@ -1,5 +1,9 @@
 import InnerBanner from "../components/InnerBanner";
 import BlogCard from "../components/BlogCard";
+import { API_URL, fetchWithTimeout, ensureUrl, stripHtml } from "../../lib/api";
+
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
 
 type ApiResponse = {
   success: boolean;
@@ -16,22 +20,6 @@ type ApiPage = {
   }>;
 };
 
-const API_BASE = "https://vgc.psofttechnologies.in";
-const MEDIA_BASE = `${API_BASE}/storage`;
-
-function mediaUrl(path?: string | null) {
-  if (!path) return "/images/placeholder.webp";
-  const clean = path.replace(/^\/+/, "");
-  if (/^https?:\/\//i.test(clean)) return clean;
-  return `${MEDIA_BASE}/${clean}`;
-}
-
-function stripHtml(html?: string | null, maxLen = 180) {
-  if (!html) return "";
-  const text = html.replace(/<[^>]+>/g, "").replace(/\s+/g, " ").trim();
-  return text.length > maxLen ? `${text.slice(0, maxLen)}…` : text;
-}
-
 function formatDate(iso?: string) {
   if (!iso) return "";
   const d = new Date(iso);
@@ -43,13 +31,19 @@ function formatDate(iso?: string) {
 }
 
 async function getBlogPage(): Promise<ApiPage | null> {
-  const res = await fetch(`${API_BASE}/api/v1/pages`, {
-    next: { revalidate: 0 },
-  });
-  if (!res.ok) return null;
-  const json: ApiResponse = await res.json();
-  const pages = json?.data ?? [];
-  return pages.find((p) => p.type === "blog") ?? null;
+  try {
+    const res = await fetchWithTimeout(API_URL, { cache: "no-store" });
+    if (!res.ok) {
+      console.error(`Blog API returned status ${res.status}`);
+      return null;
+    }
+    const json: ApiResponse = await res.json();
+    const pages = json?.data ?? [];
+    return pages.find((p) => p.type === "blog") ?? null;
+  } catch (error) {
+    console.error('Error fetching blog page:', error);
+    return null;
+  }
 }
 
 export default async function BlogPage() {
@@ -75,14 +69,14 @@ export default async function BlogPage() {
         id: b.id,
         title: b.title,
         excerpt: stripHtml(b.short_description),
-        image: mediaUrl(b.featured_image),
+        image: ensureUrl(b.featured_image || b.cover_image),
         date: formatDate(b.created_at),
         slug: b.slug,
       }))
     : [];
 
-  const pageTitle = banner?.title || "Our Blog";
-  const bannerImg = mediaUrl(banner?.image);
+  const pageTitle = blogBlock?.data?.title || banner?.title || "Our Blog";
+  const bannerImg = ensureUrl(banner?.image);
   const breadcrumb = [
     { label: "Home", href: "/" },
     { label: "Blog", href: "/blog" },

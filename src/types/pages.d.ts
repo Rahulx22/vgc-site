@@ -152,6 +152,64 @@ export interface CareerPage {
   };
 }
 
+// API response types for career page
+export interface CareerJob {
+  id: number;
+  title: string;
+  slug: string;
+  short_description: string;
+  roles: string;
+  long_description: string;
+  status: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface CareerSection {
+  title: string;
+  description: string;
+}
+
+export interface CareerHeaderBlock {
+  type: 'career_header';
+  data: {
+    left_title: string;
+    left_description: string;
+    right_image_main: string;
+    right_image_main_mobile: string;
+  };
+}
+
+export interface CareerSectionBlock {
+  type: 'career_section';
+  data: {
+    jobs_ids: number[];
+    main_text: string;
+    left_section: CareerSection[];
+    right_section: CareerSection[];
+    left_button_url: string;
+    left_button_text: string;
+    right_button_url: string;
+    right_button_text: string;
+    show_jobs_latest: boolean;
+    jobs: CareerJob[];
+  };
+}
+
+export interface CareerApiResponse {
+  id: number;
+  title: string;
+  slug: string;
+  type: string;
+  blocks: (CareerHeaderBlock | CareerSectionBlock)[];
+  meta_title: string | null;
+  meta_description: string | null;
+  meta_keywords: string | null;
+  status: string;
+  created_at: string;
+  updated_at: string;
+}
+
 export interface ContactPage {
   form: {
     title: string;
@@ -169,4 +227,36 @@ export interface ContactPage {
     name: string;
     link: string;
   }>;
+}
+
+// API response types for contact page
+export interface ContactAddress {
+  email: string;
+  phone: string;
+  map_url: string | null;
+  whatsapp: string;
+  full_address: string;
+  short_address: string;
+}
+
+export interface ContactAddressBlock {
+  type: 'address_section';
+  data: {
+    addresses: ContactAddress[];
+    map_image: string;
+  };
+}
+
+export interface ContactApiResponse {
+  id: number;
+  title: string;
+  slug: string;
+  type: string;
+  blocks: ContactAddressBlock[];
+  meta_title: string | null;
+  meta_description: string | null;
+  meta_keywords: string | null;
+  status: string;
+  created_at: string;
+  updated_at: string;
 }

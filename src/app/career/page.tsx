@@ -1,12 +1,52 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Image from "next/image";
-import careerData from "../../data/career.json";
-import type { CareerPage } from "../../types/pages";
+import { API_URL, fetchWithTimeout, ensureUrl, stripHtml } from "../../lib/api";
+import type { CareerApiResponse, CareerHeaderBlock, CareerSectionBlock, CareerSection, CareerJob } from "../../types/pages";
+
+// Helper function to parse HTML list items
+function parseHtmlList(html: string): string[] {
+  const items: string[] = [];
+  const regex = /<li[^>]*>\s*<p[^>]*>([^<]+)<\/p>\s*<\/li>/g;
+  let match;
+  
+  while ((match = regex.exec(html)) !== null) {
+    items.push(match[1].trim());
+  }
+  
+  return items;
+}
+
+// Helper function to parse job responsibilities and ideal for sections
+function parseJobDescription(longDescription: string) {
+  const responsibilities: string[] = [];
+  const idealFor: string[] = [];
+  
+  // Split by h5 tags to get sections
+  const sections = longDescription.split(/<h5[^>]*>([^<]+)<\/h5>/);
+  
+  for (let i = 1; i < sections.length; i += 2) {
+    const title = sections[i].trim();
+    const content = sections[i + 1] || '';
+    
+    const items = parseHtmlList(content);
+    
+    if (title.toLowerCase().includes('responsibilities')) {
+      responsibilities.push(...items);
+    } else if (title.toLowerCase().includes('ideal')) {
+      idealFor.push(...items);
+    }
+  }
+  
+  return { responsibilities, idealFor };
+}
 
 export default function CareerPage() {
-  const data: CareerPage = careerData;
+  const [careerData, setCareerData] = useState<CareerApiResponse | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  
   const [formData, setFormData] = useState({
     firstName: "",
     lastName: "",
@@ -18,6 +58,41 @@ export default function CareerPage() {
     degree: "",
     personalNote: ""
   });
+
+  useEffect(() => {
+    const fetchCareerData = async () => {
+      try {
+        setLoading(true);
+        // Fetch all pages from API
+        const response = await fetchWithTimeout(API_URL, { cache: 'no-store' });
+        
+        if (!response.ok) {
+          throw new Error(`Failed to fetch pages data: ${response.status}`);
+        }
+        
+        const apiResponse = await response.json();
+        const pages = Array.isArray(apiResponse?.data) ? apiResponse.data : [];
+        
+        // Find the career page from all pages
+        const careerPage = pages.find((page: any) => 
+          page.type === 'career' || page.slug === 'career'
+        );
+        
+        if (!careerPage) {
+          throw new Error('Career page not found in API response');
+        }
+        
+        setCareerData(careerPage);
+      } catch (err) {
+        console.error('Error fetching career data:', err);
+        setError(err instanceof Error ? err.message : 'Failed to load career data');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchCareerData();
+  }, []);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -32,6 +107,37 @@ export default function CareerPage() {
     });
   };
 
+  if (loading) {
+    return (
+      <div className="container" style={{ textAlign: 'center', padding: '50px 0' }}>
+        <h2>Loading...</h2>
+      </div>
+    );
+  }
+
+  if (error || !careerData) {
+    return (
+      <div className="container" style={{ textAlign: 'center', padding: '50px 0' }}>
+        <h2>Error: {error || 'Failed to load career data'}</h2>
+      </div>
+    );
+  }
+
+  // Extract data from API response
+  const headerBlock = careerData.blocks.find(block => block.type === 'career_header') as CareerHeaderBlock;
+  const sectionBlock = careerData.blocks.find(block => block.type === 'career_section') as CareerSectionBlock;
+  
+  if (!headerBlock || !sectionBlock) {
+    return (
+      <div className="container" style={{ textAlign: 'center', padding: '50px 0' }}>
+        <h2>Error: Invalid career data structure</h2>
+      </div>
+    );
+  }
+
+  const headerData = headerBlock.data;
+  const sectionData = sectionBlock.data;
+
   return (
     <>     
       <div className="business-banner dd">
@@ -42,25 +148,22 @@ export default function CareerPage() {
                  data-aos-duration="1200">
               <nav>
                 <ol className="breadcrumb">
-                  {data.banner.breadcrumb.map((item, index) => (
-                    <li key={index} className={`breadcrumb-item ${index === data.banner.breadcrumb.length - 1 ? 'active' : ''}`}>
-                      {index === data.banner.breadcrumb.length - 1 ? (
-                        item.label
-                      ) : (
-                        <a href={item.href}>{item.label}</a>
-                      )}
-                    </li>
-                  ))}
+                  <li className="breadcrumb-item">
+                    <a href="/">Home</a>
+                  </li>
+                  <li className="breadcrumb-item active">
+                    Career
+                  </li>
                 </ol>
               </nav>
-              <h1>{data.banner.title}</h1>
-              <p>{data.banner.description}</p>
+              <h1>{headerData.left_title}</h1>
+              <p>{headerData.left_description}</p>
             </div>
             
             <div className="col-xl-6 col-lg-6 col-md-12">
               <Image 
                 className="w-100" 
-                src={data.banner.image} 
+                src={ensureUrl(headerData.right_image_main)} 
                 alt="career-banner" 
                 width={800} 
                 height={600} 
@@ -76,8 +179,8 @@ export default function CareerPage() {
           <div className="row">
             <div className="col-xl-10 col-lg-12 col-md-12 offset-xl-1">
               <div className="cont-form">
-                <h3>{data.applicationForm.title}</h3>
-                <h2>{data.applicationForm.subtitle}</h2>
+                <h3>Ready to make an impact?</h3>
+                <h2>Join Our Team</h2>
                 <form onSubmit={handleSubmit}>
                   <div className="row">
                     <div className="col-lg-3 col-md-4">
@@ -155,9 +258,10 @@ export default function CareerPage() {
                         <label>Position</label>
                         <select className="box" name="position" value={formData.position} onChange={handleChange} required>
                           <option value="">Position</option>
-                          <option value="senior-accountant">Senior Accountant</option>
-                          <option value="account-manager">Account Manager</option>
-                          <option value="junior-accountant">Junior Accountant</option>
+                          {sectionData.jobs && sectionData.jobs.map((job) => (
+                            <option key={job.id} value={job.slug}>{job.roles || job.title}</option>
+                          ))}
+                          <option value="other">Other</option>
                         </select>
                       </div>
                     </div>
@@ -208,112 +312,73 @@ export default function CareerPage() {
             </div>
             
             <div className="col-xl-6 col-lg-6 col-md-12">
-              <div className="career-box">
-                <h3>{data.whyWorkWithUs.title}</h3>
-                <ul>
-                  {data.whyWorkWithUs.items.map((item, index) => (
-                    <li key={index}>{item}</li>
-                  ))}
-                </ul>
-              </div>
-              
-              <div className="career-box">
-                <h3>{data.whatWeOffer.title}</h3>
-                <ul>
-                  {data.whatWeOffer.items.map((item, index) => (
-                    <li key={index}>{item}</li>
-                  ))}
-                </ul>
-              </div>
-              
-              <div className="career-box">
-                <h3>{data.culture.title}</h3>
-                <ul>
-                  {data.culture.items.map((item, index) => (
-                    <li key={index}>{item}</li>
-                  ))}
-                </ul>
-              </div>
-              
-              <div className="career-box">
-                <h3>{data.notForYou.title}</h3>
-                <ul>
-                  {data.notForYou.items.map((item, index) => (
-                    <li key={index}>{item}</li>
-                  ))}
-                </ul>
-              </div>
-              
-              <div className="career-box">
-                <h3>{data.nonNegotiables.title}</h3>
-                <ul>
-                  {data.nonNegotiables.items.map((item, index) => (
-                    <li key={index}>{item}</li>
-                  ))}
-                </ul>
-              </div>
-              
-              <div className="career-box">
-                <h3>{data.lifeAtVGC.title}</h3>
-                <ul>
-                  {data.lifeAtVGC.items.map((item, index) => (
-                    <li key={index}>{item}</li>
-                  ))}
-                </ul>
-              </div>
+              {sectionData.left_section.map((section, index) => (
+                <div key={index} className="career-box">
+                  <h3>{section.title}</h3>
+                  <div dangerouslySetInnerHTML={{ __html: section.description }} />
+                </div>
+              ))}
             </div>
             
             <div className="col-xl-6 col-lg-6 col-md-12">
-              <div className="career-box">
-                <h3>{data.currentOpenings.title}</h3>
-                {data.currentOpenings.positions.map((position, index) => (
-                  <div key={index}>
-                    <h4>
-                      {index + 1}. {position.title} 
-                      <a className="call-btn" href="#">Learn More</a>
-                    </h4>
-                    <h5>Responsibilities:</h5>
-                    <ul>
-                      {position.responsibilities.map((resp, respIndex) => (
-                        <li key={respIndex}>{resp}</li>
-                      ))}
-                    </ul>
-                    {position.idealFor && (
-                      <>
-                        <h5>Ideal For:</h5>
-                        <ul>
-                          {position.idealFor.map((ideal, idealIndex) => (
-                            <li key={idealIndex}>{ideal}</li>
-                          ))}
-                        </ul>
-                      </>
-                    )}
-                  </div>
-                ))}
-              </div>
+              {/* Show job openings if available */}
+              {sectionData.jobs && sectionData.jobs.length > 0 && (
+                <div className="career-box">
+                  <h3>Current Openings</h3>
+                  {sectionData.jobs.map((job, index) => {
+                    const parsedJob = parseJobDescription(job.long_description);
+                    return (
+                      <div key={job.id}>
+                        <h4>
+                          {job.title} 
+                          <a className="call-btn" href={`#job-${job.id}`}>Learn More</a>
+                        </h4>
+                        {parsedJob.responsibilities.length > 0 && (
+                          <>
+                            <h5>Responsibilities:</h5>
+                            <ul>
+                              {parsedJob.responsibilities.map((resp, respIndex) => (
+                                <li key={respIndex}>{resp}</li>
+                              ))}
+                            </ul>
+                          </>
+                        )}
+                        {parsedJob.idealFor.length > 0 && (
+                          <>
+                            <h5>Ideal For:</h5>
+                            <ul>
+                              {parsedJob.idealFor.map((ideal, idealIndex) => (
+                                <li key={idealIndex}>{ideal}</li>
+                              ))}
+                            </ul>
+                          </>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
               
+              {sectionData.right_section.map((section, index) => (
+                <div key={index} className="career-box">
+                  <h3>{section.title}</h3>
+                  <div dangerouslySetInnerHTML={{ __html: section.description }} />
+                </div>
+              ))}
+                
               <div className="career-box">
-                <h3>{data.hiringProcess.title}</h3>
-                <ul>
-                  {data.hiringProcess.steps.map((step, index) => (
-                    <li key={index}>{step}</li>
-                  ))}
-                </ul>
-                
-                <h3>{data.benefits.title}</h3>
-                <ul>
-                  {data.benefits.items.map((item, index) => (
-                    <li key={index}>{item}</li>
-                  ))}
-                </ul>
-                
-                <h6>{data.cta.title}</h6>
+                <h6>{sectionData.main_text}</h6>
                 <div className="btn-sec">
-                  {data.cta.buttons.map((button, index) => (
-                    <a key={index} className={button.type === 'primary' ? 'call-btn' : 'up-btn'} href={button.link}>
-                      {button.text}
+                  {sectionData.left_button_text && (
+                    <a className="call-btn" href={sectionData.left_button_url}>
+                      {sectionData.left_button_text}
                     </a>
-                  ))}
+                  )}
+                  {sectionData.right_button_text && (
+                    <a className="up-btn" href={sectionData.right_button_url}>
+                      {sectionData.right_button_text}
+                    </a>
+                  )}
                 </div>
               </div>
             </div>

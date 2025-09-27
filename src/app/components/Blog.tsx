@@ -4,14 +4,14 @@ import Link from "next/link";
 import Image from "next/image";
 import { BlogItem } from "../../types/home";
 
-export default function Blog({ items }: { items: BlogItem[] }) {
+export default function Blog({ items, title = "Our Blog" }: { items: BlogItem[]; title?: string }) {
   return (
     <div className="blog-sec">
-      <h2 data-aos="fade-up" data-aos-duration="1200">Our Blog</h2>
+      <h2 data-aos="fade-up" data-aos-duration="1200">{title}</h2>
       <div className="container">
         <div className="row">
-          {items.map((b, i) => (
-            <div key={i} className="col-lg-4 col-md-6">
+          {items.map((b) => (
+            <div key={b.id || b.link} className="col-lg-4 col-md-6">
               <div className="blog-box">
                 <div className="blog-img">
                   <Link href={b.link} aria-label={`Read blog: ${b.title}`}>

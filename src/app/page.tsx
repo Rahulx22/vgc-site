@@ -64,6 +64,7 @@ function mapApiToHomeDataStrict(apiJson: any): HomeData {
 
   const blogBlock = blocks.find((b: any) => b.type === "blog_section");
   const blog = (blogBlock?.data?.blogs || []).map((b: any) => ({
+    id: b.id,
     date: b.created_at
       ? new Date(b.created_at).toLocaleDateString("en-GB", { day: "2-digit", month: "long", year: "numeric" })
       : "",
@@ -72,6 +73,7 @@ function mapApiToHomeDataStrict(apiJson: any): HomeData {
     image: ensureUrl(b.featured_image || b.cover_image),
     link: b.slug ? `/blog/${b.slug}` : "/blog",
   }));
+  const blogTitle = blogBlock?.data?.title || "Our Blog";
 
   const clientsBlock = blocks.find((b: any) => b.type === "clients_logo_section");
   const clients = (clientsBlock?.data?.logos || []).map((c: any) => ({
@@ -107,6 +109,7 @@ function mapApiToHomeDataStrict(apiJson: any): HomeData {
     hero,
     services,
     blog,
+    blogTitle,
     clients,
     clientsTitle,
     clientsSubtitle,
@@ -140,7 +143,7 @@ export default async function Page() {
     <>
       <HeroCarousel hero={data.hero} />
       <Services services={data.services} />
-      <Blog items={data.blog} />
+      <Blog items={data.blog} title={data.blogTitle} />
       <Clients items={data.clients} title={data.clientsTitle} subtitle={data.clientsSubtitle} />
       <Testimonials
         items={data.testimonials}

@@ -22,6 +22,7 @@ export type Service = {
 };
 
 export type BlogItem = {
+  id?: string | number;
   date: string;
   title: string;
   excerpt: string;
@@ -59,6 +60,7 @@ export type HomeData = {
   hero: Hero;
   services: Service[];
   blog: BlogItem[];
+  blogTitle?: string;
   clients: ClientItem[];
   clientsTitle?: string;
   clientsSubtitle?: string;
