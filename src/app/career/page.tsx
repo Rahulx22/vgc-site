@@ -1,8 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import Header from "../components/Header";
-import Footer from "../components/Footer";
 import Image from "next/image";
 import careerData from "../../data/career.json";
 import type { CareerPage } from "../../types/pages";
@@ -35,9 +33,7 @@ export default function CareerPage() {
   };
 
   return (
-    <>
-      <Header />
-      
+    <>     
       <div className="business-banner dd">
         <div className="container-fluid">
           <div className="row">
@@ -324,13 +320,6 @@ export default function CareerPage() {
           </div>
         </div>
       </div>
-
-      <Footer footer={{
-        phone: "+123 456 789 100",
-        email: "hi@vGC@gmail.com",
-        social: ["#", "#", "#", "#", "#"],
-        copyright: "Copyright © 2025. All rights reserved."
-      }} />
     </>
   );
 }

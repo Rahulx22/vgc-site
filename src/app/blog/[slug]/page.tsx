@@ -1,5 +1,3 @@
-import Header from "../../components/Header";
-import Footer from "../../components/Footer";
 import Image from "next/image";
 import blogSingleData from "../../../data/blog-single.json";
 import type { BlogSinglePage } from "../../../types/pages";
@@ -9,7 +7,6 @@ export default function BlogSinglePage() {
 
   return (
     <>
-      <Header />
 
       <div className="blog-txt">
         <div className="container">
@@ -39,15 +36,6 @@ export default function BlogSinglePage() {
           </div>
         </div>
       </div>
-
-      <Footer
-        footer={{
-          phone: "+123 456 789 100",
-          email: "hi@vGC@gmail.com",
-          social: ["#", "#", "#", "#", "#"],
-          copyright: "Copyright © 2025. All rights reserved.",
-        }}
-      />
     </>
   );
 }

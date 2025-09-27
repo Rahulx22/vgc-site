@@ -1,4 +1,3 @@
-// app/page.tsx
 import HeroCarousel from "./components/HeroCarousel";
 import Services from "./components/Services";
 import Blog from "./components/Blog";
@@ -13,11 +12,8 @@ import { headers } from "next/headers";
 export const revalidate = 0;
 export const dynamic = "force-dynamic";
 
-// Compat shim for Next versions
 const noStoreCompat =
-  // @ts-ignore
   (NextCache as any).noStore ??
-  // @ts-ignore
   (NextCache as any).unstable_noStore ??
   (() => {});
 
@@ -124,9 +120,8 @@ function mapApiToHomeDataStrict(apiJson: any): HomeData {
 }
 
 export default async function Page() {
-  noStoreCompat(); // safe on all Next versions
+  noStoreCompat(); 
 
-  // Build absolute base from incoming request (works on Vercel/proxy too)
   const h = headers();
   const host = h.get("x-forwarded-host") || h.get("host");
   const proto = h.get("x-forwarded-proto") || "http";

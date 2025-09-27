@@ -81,9 +81,7 @@ function assetUrl(path?: string | null): string {
 /** Strip HTML tags + entities and collapse whitespace. */
 function toPlainText(html?: string | null): string {
   if (!html) return "";
-  // remove tags
   let text = html.replace(/<[^>]+>/g, " ");
-  // decode a few common entities
   text = text
     .replace(/&nbsp;/g, " ")
     .replace(/&amp;/g, "&")
@@ -91,7 +89,6 @@ function toPlainText(html?: string | null): string {
     .replace(/&#39;/g, "'")
     .replace(/&lt;/g, "<")
     .replace(/&gt;/g, ">");
-  // collapse whitespace/newlines/tabs
   return text.replace(/\s+/g, " ").trim();
 }
 
@@ -112,6 +109,7 @@ export default function ServicePage() {
     service: "",
     message: "",
   });
+  const [submitting, setSubmitting] = useState(false);
 
   const handleChange = (
     e:
@@ -125,7 +123,13 @@ export default function ServicePage() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    console.log("form", formData);
+    setSubmitting(true);
+    try {
+      console.log("form", formData);
+      // TODO: plug your submit API here
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   // ---- Dynamic (from API) ----
@@ -218,7 +222,7 @@ export default function ServicePage() {
         return {
           title: s.title,
           slug: s.slug,
-          link: `/service/${s.slug}`,
+          link: `/service/${s.slug}`, // ✅ correct route
           summary: excerpt(txt || `Explore details about ${s.title}`),
         };
       }) ?? [];
@@ -240,6 +244,7 @@ export default function ServicePage() {
           backgroundSize: "cover",
           backgroundPosition: "center",
         }}
+        aria-label={banner.alt}
       >
         <div className="container">
           <div className="row">
@@ -285,6 +290,8 @@ export default function ServicePage() {
                     <input
                       className="box"
                       name="phone"
+                      type="tel"
+                      inputMode="tel"
                       placeholder="Phone Number"
                       value={formData.phone}
                       onChange={handleChange}
@@ -299,6 +306,7 @@ export default function ServicePage() {
                       value={formData.service}
                       onChange={handleChange}
                       required
+                      aria-label="Select a service"
                     >
                       <option value="">Service</option>
                       {(servicesSection.items.length
@@ -308,8 +316,8 @@ export default function ServicePage() {
                             { title: "Direct Tax Services", slug: "direct-tax", link: "#" },
                             { title: "Indirect Tax Services", slug: "indirect-tax", link: "#" },
                           ]
-                      ).map((s, i) => (
-                        <option key={i} value={s.title}>
+                      ).map((s) => (
+                        <option key={s.slug} value={s.title}>
                           {s.title}
                         </option>
                       ))}
@@ -328,7 +336,12 @@ export default function ServicePage() {
                     />
                   </div>
 
-                  <input type="submit" className="call-btn" value="Request a Consultation" />
+                  <input
+                    type="submit"
+                    className="call-btn"
+                    value={submitting ? "Sending..." : "Request a Consultation"}
+                    disabled={submitting}
+                  />
                 </form>
               </div>
             </div>
@@ -337,7 +350,12 @@ export default function ServicePage() {
               <h2>{founderNote.title}</h2>
               <p>{founderNote.description}</p>
               <div style={{ margin: "14px 0" }}>
-                <img src={founderNote.signature} alt="sign" width={100} height={30} />
+                <img
+                  src={founderNote.signature || "/images/sign.svg"}
+                  alt="sign"
+                  width={100}
+                  height={30}
+                />
               </div>
               <p>{founderNote.name}</p>
             </div>
@@ -363,12 +381,13 @@ export default function ServicePage() {
                 {(loading
                   ? Array.from({ length: 4 }).map((_, i) => ({
                       title: "Loading...",
+                      slug: `skeleton-${i}`,
                       link: "#",
                       summary: "Please wait…",
                     }))
                   : servicesSection.items
-                ).map((svc, idx) => (
-                  <div key={idx} className="col-lg-6 col-md-6">
+                ).map((svc) => (
+                  <div key={svc.slug} className="col-lg-6 col-md-6">
                     <article className="serv-box" data-aos="zoom-in" data-aos-duration="1200">
                       <strong>
                         <Image src="/images/check.svg" alt="check" width={20} height={20} />

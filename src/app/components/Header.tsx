@@ -4,7 +4,6 @@ import React, { useEffect, useMemo, useRef, useState, useCallback } from "react"
 import Link from "next/link";
 import Image from "next/image";
 
-/* ----------------------------- Types & Guards ----------------------------- */
 export type NavigationItem = {
   label: string;
   url: string;
@@ -43,25 +42,21 @@ const isMiddleShape = (x: unknown): x is MiddleShape =>
   typeof x === "object" &&
   isHeaderData((x as MiddleShape)?.header);
 
-/* --------------------------------- Consts -------------------------------- */
 const STORAGE_BASE = "https://vgc.psofttechnologies.in/storage/";
 
-/* --------------------------------- Utils --------------------------------- */
 const normalizeUrl = (raw?: string) => {
   if (!raw) return "/";
   let url = raw.trim().replace(/\\/g, "");
-  if (/^https?:\/\//i.test(url)) return url; // absolute external
-  if (!url.startsWith("/")) url = `/${url}`; // force leading slash
-  if (url === "/home") return "/"; // map /home -> /
+  if (/^https?:\/\//i.test(url)) return url; 
+  if (!url.startsWith("/")) url = `/${url}`; 
+  if (url === "/home") return "/"; 
   return url;
 };
 
 const isExternalItem = (item: NavigationItem) =>
   item.is_external || /^https?:\/\//i.test(item.url || "");
 
-/* -------------------------------- Component ------------------------------- */
 export default function Header({ data }: HeaderProps) {
-  // Accept HeaderData | MiddleShape | ApiShape | null
   const header: HeaderData | null = useMemo(() => {
     if (isHeaderData(data)) return data;
     if (isMiddleShape(data)) return data.header!;
@@ -69,17 +64,14 @@ export default function Header({ data }: HeaderProps) {
     return null;
   }, [data]);
 
-  // Menu state + ref for scroll shrink
   const [menuOpen, setMenuOpen] = useState(false);
   const headerRef = useRef<HTMLElement | null>(null);
 
-  // Logo handling (with onError fallback)
   const [logoSrc, setLogoSrc] = useState<string>("/images/logo.svg");
   useEffect(() => {
     setLogoSrc(header?.logo ? `${STORAGE_BASE}${header.logo}` : "/images/logo.svg");
   }, [header?.logo]);
 
-  // Derived navigation (sorted + filtered)
   const navigation: NavigationItem[] = useMemo(() => {
     if (header?.navigation?.length) {
       return [...header.navigation]

@@ -37,4 +37,4 @@ export default function BlogCard({ id, title, excerpt, image, date, slug }: Blog
       </div>
     </div>
   );
-}
+} 
