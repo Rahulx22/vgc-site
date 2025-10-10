@@ -110,6 +110,8 @@ export default function ServicePage() {
     message: "",
   });
   const [submitting, setSubmitting] = useState(false);
+  const [submitSuccess, setSubmitSuccess] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
 
   const handleChange = (
     e:
@@ -121,12 +123,51 @@ export default function ServicePage() {
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setSubmitting(true);
+    setSubmitError(null);
+    
     try {
-      console.log("form", formData);
-      // TODO: plug your submit API here
+      // Prepare the data to match API expected format
+      const submitData = {
+        name: formData.name,
+        phone: formData.phone,
+        service: formData.service,
+        message: formData.message
+      };
+
+      const response = await fetch("https://vgc.psofttechnologies.in/api/v1/contact-form", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(submitData),
+      });
+
+      if (!response.ok) {
+        throw new Error(`Failed to submit form: ${response.status} ${response.statusText}`);
+      }
+
+      const result = await response.json();
+      console.log("Form submitted successfully:", result);
+      setSubmitSuccess(true);
+      
+      // Reset form after successful submission
+      setFormData({
+        name: "",
+        phone: "",
+        service: "",
+        message: ""
+      });
+      
+      // Hide success message after 5 seconds
+      setTimeout(() => {
+        setSubmitSuccess(false);
+      }, 5000);
+    } catch (err) {
+      console.error("Error submitting form:", err);
+      setSubmitError(err instanceof Error ? err.message : "Failed to submit form. Please try again.");
     } finally {
       setSubmitting(false);
     }
@@ -273,6 +314,17 @@ export default function ServicePage() {
                     for your business journey.
                   </p>
                 </div>
+
+                {submitSuccess && (
+                  <div className="alert alert-success" style={{ margin: '20px' }}>
+                    Thank you for your request! We'll get back to you soon.
+                  </div>
+                )}
+                {submitError && (
+                  <div className="alert alert-danger" style={{ margin: '20px' }}>
+                    {submitError}
+                  </div>
+                )}
 
                 <form onSubmit={handleSubmit}>
                   <div className="in-box">

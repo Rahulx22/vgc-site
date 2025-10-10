@@ -46,6 +46,9 @@ export default function CareerPage() {
   const [careerData, setCareerData] = useState<CareerApiResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [submitting, setSubmitting] = useState(false);
+  const [submitSuccess, setSubmitSuccess] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
   
   const [formData, setFormData] = useState({
     firstName: "",
@@ -94,10 +97,64 @@ export default function CareerPage() {
     fetchCareerData();
   }, []);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Handle form submission
-    console.log("Form submitted:", formData);
+    setSubmitting(true);
+    setSubmitError(null);
+    
+    try {
+      // Prepare the data to match API expected format
+      const submitData = {
+        first_name: formData.firstName,
+        last_name: formData.lastName,
+        email: formData.email,
+        phone: formData.phone,
+        city: formData.city,
+        position: formData.position,
+        linkedin_url: formData.linkedin,
+        degree: formData.degree,
+        personal_note: formData.personalNote
+      };
+
+      const response = await fetch("https://vgc.psofttechnologies.in/api/v1/resume-form", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(submitData),
+      });
+
+      if (!response.ok) {
+        throw new Error(`Failed to submit form: ${response.status} ${response.statusText}`);
+      }
+
+      const result = await response.json();
+      console.log("Form submitted successfully:", result);
+      setSubmitSuccess(true);
+      
+      // Reset form after successful submission
+      setFormData({
+        firstName: "",
+        lastName: "",
+        email: "",
+        phone: "",
+        city: "",
+        position: "",
+        linkedin: "",
+        degree: "",
+        personalNote: ""
+      });
+      
+      // Hide success message after 5 seconds
+      setTimeout(() => {
+        setSubmitSuccess(false);
+      }, 5000);
+    } catch (err) {
+      console.error("Error submitting form:", err);
+      setSubmitError(err instanceof Error ? err.message : "Failed to submit form. Please try again.");
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
@@ -181,6 +238,16 @@ export default function CareerPage() {
               <div className="cont-form">
                 <h3>Ready to make an impact?</h3>
                 <h2>Join Our Team</h2>
+                {submitSuccess && (
+                  <div className="alert alert-success">
+                    Thank you for your application! We'll get back to you soon.
+                  </div>
+                )}
+                {submitError && (
+                  <div className="alert alert-danger">
+                    {submitError}
+                  </div>
+                )}
                 <form onSubmit={handleSubmit}>
                   <div className="row">
                     <div className="col-lg-3 col-md-4">
@@ -302,7 +369,12 @@ export default function CareerPage() {
                       onChange={handleChange}
                     />
                   </div>
-                  <input type="submit" className="call-btn" value="Submit →" />
+                  <input 
+                    type="submit" 
+                    className="call-btn" 
+                    value={submitting ? "Submitting..." : "Submit →"} 
+                    disabled={submitting}
+                  />
                 </form>
               </div>
             </div>

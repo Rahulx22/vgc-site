@@ -149,6 +149,11 @@ footer .call-btn { margin:20px 0 0; }
 .cont-form .box { background-color:#fff; border:1px solid #575757; color:#b4b4b4; font-family:Lato; font-size:15px; letter-spacing:0; padding:12px 18px; text-transform:none; }
 .cont-form .box::placeholder { color:#b4b4b4; }
 .cont-form .call-btn { background-color:#fff; background-image:url(../images/arrow.svg) !important; background-position:87px center; background-repeat:no-repeat; border-radius:0; color:var(--main-color); display:flex; font-size:20px; margin-left:auto; padding:10px 60px 10px 35px; }
+
+/* Alert styles for form submission */
+.alert { padding: 15px; margin-bottom: 20px; border: 1px solid transparent; border-radius: 4px; }
+.alert-success { color: #3c763d; background-color: #dff0d8; border-color: #d6e9c6; }
+.alert-danger { color: #a94442; background-color: #f2dede; border-color: #ebccd1; }
 .cont-box { background-image:url(../images/cont-bg.webp) !important; background-position: top bottom; background-size:cover; height:100%; padding:40px 55px 0; }
 .cont-box h3 { align-items:center; color:#fff; display:flex; font-size:25px; font-weight:800; gap:14px; margin:0; }
 .cont-box h3 img { width:25px; }
