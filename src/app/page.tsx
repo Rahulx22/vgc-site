@@ -8,9 +8,17 @@ import type { HomeData } from "../types/home";
 import { fetchWithTimeout, ensureUrl, stripHtml } from "../lib/api";
 import * as NextCache from "next/cache";
 import { headers } from "next/headers";
+import type { Metadata } from "next";
 
 export const revalidate = 0;
 export const dynamic = "force-dynamic";
+
+// Add dynamic metadata
+export const metadata: Metadata = {
+  title: "VGC Consulting - Business, Tax & Compliance Solutions",
+  description: "VGC Consulting provides comprehensive business, tax, and compliance solutions tailored to empower MSMEs, corporates, and global ventures.",
+  keywords: "business consulting, tax services, compliance services, MSME support, corporate advisory",
+};
 
 const noStoreCompat =
   (NextCache as any).noStore ??
@@ -40,7 +48,7 @@ function mapApiToHomeDataStrict(apiJson: any): HomeData {
       const { value, suffix, display } = splitCount(s?.count_percent);
       return { label: String(s?.text ?? "").trim(), value, suffix, display };
     })
-    .filter((c) => c.label && (c.value !== null || c.display));
+    .filter((c: any) => c.label && (c.value !== null || c.display));
 
   const hero = {
     title: firstBanner?.title ?? "",
@@ -90,9 +98,6 @@ function mapApiToHomeDataStrict(apiJson: any): HomeData {
     rating: String(t.rating ?? "5"),
     avatar: ensureUrl(t.avatar),
   }));
-  const testimonialsLeftText = testimonialsBlock?.data?.left_text || "Building Trust Through Results";
-  const testimonialsRightText = testimonialsBlock?.data?.right_text || "Testimonials";
-  const testimonialsRightSubtext = testimonialsBlock?.data?.right_subtext || "Client Success Stories: Hear What They Say";
 
   const ctaBlock = blocks.find((b: any) => b.type === "cta_section");
   const cta = {
@@ -114,9 +119,6 @@ function mapApiToHomeDataStrict(apiJson: any): HomeData {
     clientsTitle,
     clientsSubtitle,
     testimonials,
-    testimonialsLeftText,
-    testimonialsRightText,
-    testimonialsRightSubtext,
     cta,
     footer,
   } as HomeData;
@@ -125,12 +127,16 @@ function mapApiToHomeDataStrict(apiJson: any): HomeData {
 export default async function Page() {
   noStoreCompat(); 
 
-  const h = headers();
+  const h = await headers();
   const host = h.get("x-forwarded-host") || h.get("host");
   const proto = h.get("x-forwarded-proto") || "http";
   const base = `${proto}://${host}`;
 
-  const pagesRes = await fetchWithTimeout(`${base}/api/pages`, { cache: "no-store" });
+  // Change cache strategy from "no-store" to "force-cache" with revalidation
+  const pagesRes = await fetchWithTimeout(`${base}/api/pages`, { 
+    cache: "force-cache",
+    next: { revalidate: 300 } // Revalidate every 5 minutes
+  });
   if (!pagesRes.ok) {
     const text = await pagesRes.text().catch(() => "<no body>");
     throw new Error(`Pages API returned non-OK ${pagesRes.status} - ${pagesRes.statusText}. Body: ${text}`);
@@ -147,9 +153,6 @@ export default async function Page() {
       <Clients items={data.clients} title={data.clientsTitle} subtitle={data.clientsSubtitle} />
       <Testimonials
         items={data.testimonials}
-        leftText={data.testimonialsLeftText}
-        rightText={data.testimonialsRightText}
-        rightSubtext={data.testimonialsRightSubtext}
       />
       <div className="ready-sec">
         <div className="container">

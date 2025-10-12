@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
+import type { Metadata } from "next";
 
 type CMSBlock =
   | {
@@ -57,6 +58,9 @@ type CMSPage = {
   slug: string;
   type: string;
   blocks: CMSBlock[];
+  meta_title?: string | null;
+  meta_description?: string | null;
+  meta_keywords?: string | null;
 };
 
 type CMSResponse = {
@@ -146,34 +150,22 @@ export default function ServicePage() {
       });
 
       if (!response.ok) {
-        throw new Error(`Failed to submit form: ${response.status} ${response.statusText}`);
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData?.message || `HTTP ${response.status}`);
       }
 
-      const result = await response.json();
-      console.log("Form submitted successfully:", result);
       setSubmitSuccess(true);
-      
-      // Reset form after successful submission
-      setFormData({
-        name: "",
-        phone: "",
-        service: "",
-        message: ""
-      });
-      
-      // Hide success message after 5 seconds
-      setTimeout(() => {
-        setSubmitSuccess(false);
-      }, 5000);
-    } catch (err) {
-      console.error("Error submitting form:", err);
-      setSubmitError(err instanceof Error ? err.message : "Failed to submit form. Please try again.");
+      setFormData({ name: "", phone: "", service: "", message: "" });
+      // Auto-hide success message after 5 seconds
+      setTimeout(() => setSubmitSuccess(false), 5000);
+    } catch (err: any) {
+      setSubmitError(err?.message || "Failed to submit the form. Please try again.");
     } finally {
       setSubmitting(false);
     }
   };
 
-  // ---- Dynamic (from API) ----
+  // ---- Dynamic ----
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState<string | null>(null);
   const [page, setPage] = useState<CMSPage | null>(null);
@@ -330,24 +322,26 @@ export default function ServicePage() {
                   <div className="in-box">
                     <input
                       className="box"
+                      type="text"
                       name="name"
                       placeholder="Full Name"
                       value={formData.name}
                       onChange={handleChange}
                       required
+                      aria-label="Full name"
                     />
                   </div>
 
                   <div className="in-box">
                     <input
                       className="box"
-                      name="phone"
                       type="tel"
-                      inputMode="tel"
+                      name="phone"
                       placeholder="Phone Number"
                       value={formData.phone}
                       onChange={handleChange}
                       required
+                      aria-label="Phone number"
                     />
                   </div>
 
@@ -469,3 +463,10 @@ export default function ServicePage() {
     </>
   );
 }
+
+// Add dynamic metadata
+export const metadata: Metadata = {
+  title: "Our Services | VGC Consulting",
+  description: "Explore our comprehensive business, tax, and compliance solutions tailored to empower MSMEs, corporates, and global ventures.",
+  keywords: "business services, tax services, compliance services, MSME support, corporate advisory",
+};

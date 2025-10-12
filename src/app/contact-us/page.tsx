@@ -5,6 +5,14 @@ import Image from "next/image";
 import ContactForm from "../components/ContactForm";
 import { API_URL, fetchWithTimeout, ensureUrl } from "../../lib/api";
 import type { ContactApiResponse, ContactAddressBlock, ContactAddress } from "../../types/pages";
+import type { Metadata } from "next";
+
+// Add static metadata
+export const metadata: Metadata = {
+  title: "Contact Us | VGC Consulting",
+  description: "Get in touch with VGC Consulting for business, tax, and compliance solutions. We're here to help your business grow.",
+  keywords: "contact us, business consulting, tax services, compliance solutions, get in touch",
+};
 
 // Transform API data to the format expected by the components
 function transformContactData(apiData: ContactApiResponse) {

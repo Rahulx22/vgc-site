@@ -3,6 +3,14 @@ import Footer from "../components/Footer";
 import Image from "next/image";
 import businessSupportData from "../../data/business-support.json";
 import type { BusinessSupportPage } from "../../types/pages";
+import type { Metadata } from "next";
+
+// Add static metadata
+export const metadata: Metadata = {
+  title: "Business Support Services | VGC Consulting",
+  description: "Comprehensive business support services tailored to empower MSMEs, corporates, and global ventures with expert financial and tax solutions.",
+  keywords: "business support, MSME services, corporate advisory, business solutions, financial support",
+};
 
 export default function BusinessSupportPage() {
   const data: BusinessSupportPage = businessSupportData;
@@ -75,12 +83,7 @@ export default function BusinessSupportPage() {
         </div>
       </div>
 
-      <Footer footer={{
-        phone: "+123 456 789 100",
-        email: "hi@vGC@gmail.com",
-        social: ["#", "#", "#", "#", "#"],
-        copyright: "Copyright © 2025. All rights reserved."
-      }} />
+      <Footer />
     </>
   );
 }

@@ -4,14 +4,15 @@ import Script from "next/script";
 import AOSProvider from "./components/AOSProvider";
 import HeaderContainer from "./components/HeaderContainer";
 import FooterContainer from "./components/FooterContainer";
+import PerformanceMonitor from "./components/PerformanceMonitor";
 import "./globals.css";
 
 import * as NextCache from "next/cache";
 import { headers } from "next/headers";
 
 export const metadata: Metadata = {
-  title: "VGC Consulting",
-  description: "VGC Consulting website built with Next.js",
+  title: "VGC Consulting - Business, Tax & Compliance Solutions",
+  description: "VGC Consulting provides comprehensive business, tax, and compliance solutions tailored to empower MSMEs, corporates, and global ventures.",
 };
 
 export const revalidate = 0;
@@ -27,7 +28,7 @@ const noStoreCompat =
 async function fetchSettingsOnce() {
   noStoreCompat();
 
-  const h = headers();
+  const h = await headers();
   const host = h.get("x-forwarded-host") || h.get("host");
   const proto = h.get("x-forwarded-proto") || "http";
   const base = `${proto}://${host}`;
@@ -46,6 +47,15 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   return (
     <html lang="en">
       <head>
+        {/* Preconnect to external domains for faster loading */}
+        <link rel="preconnect" href="https://vgc.psofttechnologies.in" />
+        <link rel="preconnect" href="https://unpkg.com" />
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        <link rel="preconnect" href="https://maxcdn.bootstrapcdn.com" />
+        <link rel="preconnect" href="https://cdnjs.cloudflare.com" />
+        <link rel="preconnect" href="https://code.jquery.com" />
+        
         <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet" />
         <link href="https://fonts.googleapis.com/css2?family=Lato:wght@100;300;400;700;900&display=swap" rel="stylesheet" />
         <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@100..700&display=swap" rel="stylesheet" />
@@ -61,13 +71,43 @@ export default async function RootLayout({ children }: { children: React.ReactNo
           {children}
           <FooterContainer initial={settings} />
         </AOSProvider>
+        
+        {/* Performance monitoring (only in development) */}
+        <PerformanceMonitor />
 
-        <Script src="https://unpkg.com/aos@2.3.1/dist/aos.js" strategy="afterInteractive" />
-        <Script src="https://code.jquery.com/jquery-3.7.1.min.js" strategy="afterInteractive" />
-        <Script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.1.3/js/bootstrap.min.js" strategy="afterInteractive" />
-        <Script src="https://cdnjs.cloudflare.com/ajax/libs/classie/1.0.1/classie.js" strategy="afterInteractive" />
-        <Script src="https://cdnjs.cloudflare.com/ajax/libs/OwlCarousel2/2.3.4/owl.carousel.min.js" strategy="afterInteractive" />
-        <Script src="/js/custom.js" strategy="afterInteractive" />
+        {/* Load critical scripts first */}
+        <Script 
+          src="https://code.jquery.com/jquery-3.7.1.min.js" 
+          strategy="beforeInteractive" 
+        />
+        
+        {/* Load animation library after critical content */}
+        <Script 
+          src="https://unpkg.com/aos@2.3.1/dist/aos.js" 
+          strategy="lazyOnload" 
+        />
+        
+        {/* Load bootstrap after jQuery */}
+        <Script 
+          src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.1.3/js/bootstrap.min.js" 
+          strategy="lazyOnload" 
+        />
+        
+        {/* Load other libraries with lazy loading */}
+        <Script 
+          src="https://cdnjs.cloudflare.com/ajax/libs/classie/1.0.1/classie.js" 
+          strategy="lazyOnload" 
+        />
+        <Script 
+          src="https://cdnjs.cloudflare.com/ajax/libs/OwlCarousel2/2.3.4/owl.carousel.min.js" 
+          strategy="lazyOnload" 
+        />
+        
+        {/* Load custom scripts last */}
+        <Script 
+          src="/js/custom.js" 
+          strategy="lazyOnload" 
+        />
       </body>
     </html>
   );

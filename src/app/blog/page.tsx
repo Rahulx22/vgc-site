@@ -1,9 +1,17 @@
 import InnerBanner from "../components/InnerBanner";
 import BlogCard from "../components/BlogCard";
 import { API_URL, fetchWithTimeout, ensureUrl, stripHtml } from "../../lib/api";
+import type { Metadata } from "next";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
+
+// Add dynamic metadata
+export const metadata: Metadata = {
+  title: "Blog | VGC Consulting",
+  description: "Stay updated with the latest insights on business, tax, and compliance solutions from VGC Consulting experts.",
+  keywords: "business blog, tax insights, compliance updates, financial advice, industry news",
+};
 
 type ApiResponse = {
   success: boolean;
@@ -18,6 +26,9 @@ type ApiPage = {
     type: string; 
     data: any;
   }>;
+  meta_title?: string | null;
+  meta_description?: string | null;
+  meta_keywords?: string | null;
 };
 
 function formatDate(iso?: string) {

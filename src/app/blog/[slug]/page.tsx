@@ -1,6 +1,7 @@
 import Image from "next/image";
 import { notFound } from "next/navigation";
 import { API_URL, fetchWithTimeout, ensureUrl, stripHtml } from "../../../lib/api";
+import type { Metadata, ResolvingMetadata } from "next";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -22,6 +23,9 @@ interface BlogPost {
   cover_image: string;
   created_at: string;
   updated_at: string;
+  meta_title?: string | null;
+  meta_description?: string | null;
+  meta_keywords?: string | null;
 }
 
 function formatDate(iso?: string) {
@@ -95,6 +99,36 @@ async function getBlogPost(slug: string): Promise<BlogPost | null> {
     console.error('Error fetching blog post:', error);
     return null;
   }
+}
+
+// Add dynamic metadata generation
+type Props = {
+  params: { slug: string }
+  searchParams: { [key: string]: string | string[] | undefined }
+}
+
+export async function generateMetadata(
+  { params, searchParams }: Props,
+  parent: ResolvingMetadata
+): Promise<Metadata> {
+  const blogPost = await getBlogPost(params.slug);
+  
+  if (!blogPost) {
+    return {
+      title: "Blog Post Not Found | VGC Consulting",
+      description: "The requested blog post could not be found.",
+    };
+  }
+
+  const title = blogPost.meta_title || `${blogPost.title} | VGC Consulting Blog`;
+  const description = blogPost.meta_description || stripHtml(blogPost.short_description || "");
+  const keywords = blogPost.meta_keywords || blogPost.title;
+
+  return {
+    title,
+    description,
+    keywords,
+  };
 }
 
 export default async function BlogSinglePage({ params }: BlogSingleProps) {

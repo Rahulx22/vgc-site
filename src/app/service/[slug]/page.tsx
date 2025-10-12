@@ -1,8 +1,8 @@
 import { notFound } from "next/navigation";
 import Header from "../../components/Header";
-import Footer from "../../components/Footer";
 import Image from "next/image";
 import { fetchWithTimeout, ensureUrl, stripHtml, API_URL } from "../../../lib/api";
+import type { Metadata, ResolvingMetadata } from "next";
 
 interface ServiceDetailProps {
   params: {
@@ -103,6 +103,36 @@ async function getServiceData(slug: string) {
   }
 }
 
+// Add dynamic metadata generation
+type Props = {
+  params: { slug: string }
+  searchParams: { [key: string]: string | string[] | undefined }
+}
+
+export async function generateMetadata(
+  { params, searchParams }: Props,
+  parent: ResolvingMetadata
+): Promise<Metadata> {
+  const service = await getServiceData(params.slug);
+  
+  if (!service) {
+    return {
+      title: "Service Not Found | VGC Consulting",
+      description: "The requested service could not be found.",
+    };
+  }
+
+  const title = service.meta_title || `${service.title} | VGC Consulting`;
+  const description = service.meta_description || stripHtml(service.short_description || service.long_description || "");
+  const keywords = service.meta_keywords || service.title;
+
+  return {
+    title,
+    description,
+    keywords,
+  };
+}
+
 export default async function ServiceDetailPage({ params }: ServiceDetailProps) {
   const { slug } = await params;
   const service = await getServiceData(slug);
@@ -189,15 +219,6 @@ export default async function ServiceDetailPage({ params }: ServiceDetailProps) 
           </div>
         </div>
       </div>
-
-      <Footer 
-        footer={{
-          phone: "+123 456 789 100",
-          email: "hi@vGC@gmail.com", 
-          social: ["#", "#", "#", "#", "#"],
-          copyright: "Copyright © 2025. All rights reserved."
-        }}
-      />
     </>
   );
 }

@@ -7,10 +7,22 @@ import TeamSection from "./../components/TeamSection";
 
 import * as NextCache from "next/cache";
 import { headers } from "next/headers";
+import type { Metadata } from "next";
 
 // Force fresh
 export const revalidate = 0;
 export const dynamic = "force-dynamic";
+
+// Add dynamic metadata
+export async function generateMetadata(): Promise<Metadata> {
+  // In a real implementation, you would fetch the actual about page data
+  // For now, we'll use static metadata
+  return {
+    title: "About Us | VGC Consulting",
+    description: "Learn about VGC Consulting's mission, values, and team of experts dedicated to empowering businesses with comprehensive financial and tax solutions.",
+    keywords: "about us, our story, company history, team, mission, values",
+  };
+}
 
 const noStoreCompat =
   (NextCache as any).noStore ??
@@ -44,13 +56,16 @@ type ApiResponse = {
     slug: string;
     type: string;
     blocks: Array<{ type: string; data: any }>;
+    meta_title?: string | null;
+    meta_description?: string | null;
+    meta_keywords?: string | null;
   }>;
 };
 
 async function fetchAboutPage() {
   noStoreCompat();
 
-  const h = headers();
+  const h = await headers();
   const host = h.get("x-forwarded-host") || h.get("host");
   const proto = h.get("x-forwarded-proto") || "http";
   const base = `${proto}://${host}`;

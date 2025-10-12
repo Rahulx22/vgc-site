@@ -10,7 +10,13 @@ export async function fetchWithTimeout(input: RequestInfo, init: RequestInit = {
   const controller = new AbortController();
   const id = setTimeout(() => controller.abort(), timeoutMs);
   try {
-    const res = await fetch(input, { ...init, signal: controller.signal });
+    // Add default caching if not specified
+    const fetchInit = {
+      next: { revalidate: 300 }, // Cache for 5 minutes by default
+      ...init
+    };
+    
+    const res = await fetch(input, { ...fetchInit, signal: controller.signal });
     return res;
   } finally {
     clearTimeout(id);
@@ -41,7 +47,10 @@ export function stripHtml(html = ""): string {
  */
 export async function fetchSettings() {
   try {
-    const res = await fetchWithTimeout(SETTINGS_URL, { cache: 'no-store' });
+    const res = await fetchWithTimeout(SETTINGS_URL, { 
+      cache: 'force-cache',
+      next: { revalidate: 3600 } // Cache settings for 1 hour
+    });
     if (!res.ok) {
       throw new Error(`Settings API returned ${res.status}`);
     }

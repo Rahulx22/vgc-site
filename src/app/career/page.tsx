@@ -4,6 +4,14 @@ import { useState, useEffect } from "react";
 import Image from "next/image";
 import { API_URL, fetchWithTimeout, ensureUrl, stripHtml } from "../../lib/api";
 import type { CareerApiResponse, CareerHeaderBlock, CareerSectionBlock, CareerSection, CareerJob } from "../../types/pages";
+import type { Metadata } from "next";
+
+// Add static metadata
+export const metadata: Metadata = {
+  title: "Career Opportunities | VGC Consulting",
+  description: "Join VGC Consulting and be part of a team dedicated to empowering businesses with expert financial and tax solutions.",
+  keywords: "career opportunities, job openings, work with us, employment, VGC team",
+};
 
 // Helper function to parse HTML list items
 function parseHtmlList(html: string): string[] {
