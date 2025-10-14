@@ -9,6 +9,13 @@ interface ServiceDetailProps {
   };
 }
 
+// Define section interface
+interface Section {
+  title: string;
+  start: number;
+  content?: string;
+}
+
 // Fetch service data from API and parse offerings
 async function getServiceData(slug: string) {
   try {
@@ -40,61 +47,120 @@ async function getServiceData(slug: string) {
     const longDesc = service.long_description || "";
     const offerings: any[] = [];
     
+    // If there's no HTML structure, treat the entire content as a single offering
+    if (!longDesc.includes("<h2")) {
+      offerings.push({
+        title: service.title,
+        subtitle: "Our Services",
+        description: stripHtml(service.short_description || ""),
+        items: []
+      });
+      return {
+        ...service,
+        offerings
+      };
+    }
+    
     // Extract main sections (h2 tags)
-    const sectionRegex = /<h2[^>]*><strong[^>]*>([^<]+)<\/strong[^>]*><\/h2>/g;
-    const sections = [];
+    const sectionRegex = /<h2[^>]*>([\s\S]*?)<\/h2>/g;
+    const sections: Section[] = [];
     let match;
+    let lastIndex = 0;
     
     while ((match = sectionRegex.exec(longDesc)) !== null) {
+      if (sections.length > 0) {
+        // Add content for previous section
+        sections[sections.length - 1].content = longDesc.substring(lastIndex, match.index);
+      }
+      
       sections.push({
         title: match[1].trim(),
         start: match.index + match[0].length
       });
+      
+      lastIndex = match.index + match[0].length;
+    }
+    
+    // Add content for the last section
+    if (sections.length > 0) {
+      sections[sections.length - 1].content = longDesc.substring(lastIndex);
     }
     
     // Process each section
     for (let i = 0; i < sections.length; i++) {
       const section = sections[i];
-      const nextSection = sections[i + 1];
-      const sectionContent = longDesc.substring(
-        section.start, 
-        nextSection ? nextSection.start - nextSection.title.length - 20 : longDesc.length
-      );
       
-      // Extract items from this section
+      // Extract items from this section (both <li> and <p> tags)
       const items: { title: string; description: string }[] = [];
-      const itemRegex = /<li[^>]*><p[^>]*><strong[^>]*>([^<]+)<\/strong[^>]*>\s*([^<]*)<\/p[^>]*><\/li>/g;
+      
+      // Look for list items with strong tags
+      const listItemRegex = /<li[^>]*>([\s\S]*?)<\/li>/g;
       let itemMatch;
       
-      while ((itemMatch = itemRegex.exec(sectionContent)) !== null) {
-        items.push({
-          title: itemMatch[1].trim(),
-          description: itemMatch[2].trim().replace(/^[\s–-]+/, '')
-        });
+      while ((itemMatch = listItemRegex.exec(section.content || "")) !== null) {
+        const itemContent = itemMatch[1];
+        // Extract title (text within <strong> tags)
+        const titleRegex = /<strong[^>]*>([\s\S]*?)<\/strong>/;
+        const titleMatch = titleRegex.exec(itemContent);
+        const title = titleMatch ? titleMatch[1].trim() : "";
+        
+        // Extract description (text after strong tag or entire content if no strong tag)
+        let description = "";
+        if (titleMatch) {
+          description = itemContent.substring(titleMatch.index + titleMatch[0].length).replace(/^[^a-zA-Z0-9]*/, "").trim();
+        } else {
+          description = stripHtml(itemContent);
+        }
+        
+        if (title || description) {
+          items.push({
+            title: stripHtml(title),
+            description: stripHtml(description)
+          });
+        }
+      }
+      
+      // If no list items found, look for paragraph tags
+      if (items.length === 0) {
+        const paragraphRegex = /<p[^>]*>([\s\S]*?)<\/p>/g;
+        let paraMatch;
+        
+        while ((paraMatch = paragraphRegex.exec(section.content || "")) !== null) {
+          const paraContent = stripHtml(paraMatch[1]);
+          if (paraContent) {
+            items.push({
+              title: "",
+              description: paraContent
+            });
+          }
+        }
       }
       
       // Extract subtitle (h3 after h2)
-      const subtitleRegex = /<h3[^>]*><strong[^>]*>([^<]+)<\/strong[^>]*><\/h3>/;
-      const subtitleMatch = subtitleRegex.exec(sectionContent);
+      const subtitleRegex = /<h3[^>]*>([\s\S]*?)<\/h3>/;
+      const subtitleMatch = subtitleRegex.exec(section.content || "");
       
       offerings.push({
-        title: section.title,
-        subtitle: subtitleMatch ? subtitleMatch[1].trim() : null,
+        title: stripHtml(section.title),
+        subtitle: subtitleMatch ? stripHtml(subtitleMatch[1]) : null,
         description: stripHtml(service.short_description || ""),
         items: items
       });
     }
     
+    // If no sections found, create a default one
+    if (offerings.length === 0) {
+      offerings.push({
+        title: service.title,
+        subtitle: "Our Services",
+        description: stripHtml(service.short_description || service.long_description || ""),
+        items: []
+      });
+    }
+    
     return {
       ...service,
-      offerings: offerings.length > 0 ? offerings : [
-        {
-          title: service.title,
-          subtitle: "Our Services",
-          description: stripHtml(service.short_description || service.long_description || ""),
-          items: []
-        }
-      ]
+      offerings
     };
   } catch (error) {
     console.error("Failed to fetch service data:", error);
@@ -205,7 +271,8 @@ export default async function ServiceDetailPage({ params }: ServiceDetailProps) 
                       <ul>
                         {offering.items.map((item: any, itemIndex: number) => (
                           <li key={itemIndex}>
-                            <strong>{item.title}</strong> {item.description}
+                            {item.title && <strong>{item.title}</strong>}
+                            {item.description && ` ${item.description}`}
                           </li>
                         ))}
                       </ul>

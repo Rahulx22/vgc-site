@@ -1,10 +1,40 @@
-
 body { color:#000; font-family:Lato; }
 :root { --main-color:#1F2B44; --main-color-1:#04112A; --main-color-2:#037f37; }
 a, i, button, .serv-box { outline:none; text-decoration:none; transition:all ease 0.5s; -webkit-transition:all ease 0.5s; }
 ul { list-style:none; margin:0; padding:0; }
 ul.with-bullets, .career-box ul { list-style: disc; padding-left: 25px; }
 img { height:auto; object-fit:cover; width:auto; }
+
+/* Ensure consistent styling for service page lists */
+.business-box ul {
+  list-style: none;
+  padding: 0 0 55px;
+}
+
+.business-box li {
+  color: #000;
+  font-size: 18px;
+  font-weight: 600;
+  line-height: 1.6;
+  margin: 0 0 3px 48px;
+  position: relative;
+}
+
+.business-box li::before {
+  background-color: var(--main-color);
+  border-radius: 50%;
+  content: '';
+  height: 8px;
+  left: -18px;
+  position: absolute;
+  top: 12px;
+  width: 8px;
+}
+
+.business-box li strong {
+  color: var(--main-color);
+  font-size: 20px;
+}
 
 header { background-color:#fff; border-bottom:1px solid #fff; left:0; position:fixed; right:0; top:0; transition:all 500ms; z-index:111; }
 header.smaller, .service-form, .about-sec.dd { background-color:var(--main-color); }

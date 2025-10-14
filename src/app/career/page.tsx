@@ -17,7 +17,7 @@ function decodeHtmlEntities(text: string): string {
   return textArea.value;
 }
 
-// Helper function to parse HTML list items
+// Enhanced helper function to parse HTML list items
 function parseHtmlList(html: string): string[] {
   const items: string[] = [];
   
@@ -25,33 +25,43 @@ function parseHtmlList(html: string): string[] {
   if (!html) return items;
   
   // Approach 1: Look for <li> tags with <p> inside
-  const regex1 = /<li[^>]*>\s*<p[^>]*>([^<]+)<\/p>\s*<\/li>/g;
+  const regex1 = /<li[^>]*>\s*<p[^>]*>([\s\S]*?)<\/p>\s*<\/li>/g;
   let match1;
   while ((match1 = regex1.exec(html)) !== null) {
-    items.push(decodeHtmlEntities(match1[1].trim()));
-  }
-  
-  // If no items found, try <li> tags with direct text content
-  if (items.length === 0) {
-    const regex2 = /<li[^>]*>(?:\s*<[^>]*>)*([^<]+)(?:<[^>]*>\s*)*<\/li>/g;
-    let match2;
-    while ((match2 = regex2.exec(html)) !== null) {
-      const cleanText = match2[1].trim();
-      if (cleanText && !cleanText.startsWith('<')) {
+    const content = match1[1].trim();
+    if (content) {
+      // Remove any nested HTML tags but preserve the text
+      const cleanText = content.replace(/<[^>]*>/g, '').trim();
+      if (cleanText) {
         items.push(decodeHtmlEntities(cleanText));
       }
     }
   }
   
-  // If still no items, try a simpler approach
+  // If no items found, try <li> tags with direct text content
   if (items.length === 0) {
-    const regex3 = /<li[^>]*>(.*?)<\/li>/g;
-    let match3;
-    while ((match3 = regex3.exec(html)) !== null) {
-      // Remove any remaining HTML tags from the content
-      const cleanText = match3[1].replace(/<[^>]*>/g, '').trim();
-      if (cleanText) {
-        items.push(decodeHtmlEntities(cleanText));
+    const regex2 = /<li[^>]*>([\s\S]*?)<\/li>/g;
+    let match2;
+    while ((match2 = regex2.exec(html)) !== null) {
+      const content = match2[1].trim();
+      if (content) {
+        // Remove any nested HTML tags but preserve the text
+        const cleanText = content.replace(/<[^>]*>/g, '').trim();
+        if (cleanText) {
+          items.push(decodeHtmlEntities(cleanText));
+        }
+      }
+    }
+  }
+  
+  // If still no items, try a simpler approach for plain text
+  if (items.length === 0) {
+    // Try to split by line breaks or other separators
+    const lines = html.split(/[\n\r]+/);
+    for (const line of lines) {
+      const cleanLine = line.replace(/<[^>]*>/g, '').trim();
+      if (cleanLine && cleanLine.length > 10) { // Only add if it's substantial content
+        items.push(decodeHtmlEntities(cleanLine));
       }
     }
   }
@@ -59,37 +69,86 @@ function parseHtmlList(html: string): string[] {
   return items;
 }
 
-// Helper function to parse job responsibilities and ideal for sections
+// Enhanced helper function to parse job responsibilities and ideal for sections
 function parseJobDescription(longDescription: string) {
   const responsibilities: string[] = [];
   const idealFor: string[] = [];
   
+  // Handle case where longDescription might be empty or invalid
+  if (!longDescription || typeof longDescription !== 'string') {
+    return { responsibilities, idealFor };
+  }
+  
   // Debug: Log the raw long description
   console.log('Raw long description:', longDescription);
   
-  // Split by h5 tags to get sections
-  const sections = longDescription.split(/<h5[^>]*>([^<]+)<\/h5>/);
-  
-  // Debug: Log the sections
-  console.log('Sections:', sections);
-  
-  for (let i = 1; i < sections.length; i += 2) {
-    const title = sections[i].trim();
-    const content = sections[i + 1] || '';
-    
-    // Debug: Log each section
-    console.log('Section title:', title);
-    console.log('Section content:', content);
-    
-    const items = parseHtmlList(content);
-    
-    // Debug: Log parsed items
-    console.log('Parsed items:', items);
-    
-    if (title.toLowerCase().includes('responsibilities')) {
-      responsibilities.push(...items);
-    } else if (title.toLowerCase().includes('ideal')) {
-      idealFor.push(...items);
+  try {
+    // Try to find sections by h5 tags first
+    if (longDescription.includes('<h5')) {
+      // Split by h5 tags to get sections
+      const sections = longDescription.split(/<h5[^>]*>([^<]+)<\/h5>/i);
+      
+      // Debug: Log the sections
+      console.log('Sections:', sections);
+      
+      for (let i = 1; i < sections.length; i += 2) {
+        const title = sections[i] ? sections[i].trim() : '';
+        const content = sections[i + 1] || '';
+        
+        // Debug: Log each section
+        console.log('Section title:', title);
+        console.log('Section content:', content);
+        
+        const items = parseHtmlList(content);
+        
+        // Debug: Log parsed items
+        console.log('Parsed items:', items);
+        
+        if (title.toLowerCase().includes('responsibilities') || title.toLowerCase().includes('responsibility')) {
+          responsibilities.push(...items);
+        } else if (title.toLowerCase().includes('ideal')) {
+          idealFor.push(...items);
+        }
+      }
+    } else {
+      // If no h5 tags, try to parse the entire content as a single section
+      // Look for keywords to determine section type
+      const items = parseHtmlList(longDescription);
+      
+      // If we have items, try to determine which section they belong to based on content
+      if (items.length > 0) {
+        // Simple heuristic: if any item contains responsibility-related words, put in responsibilities
+        const responsibilityKeywords = ['responsible', 'responsibility', 'task', 'duty', 'handle', 'manage', 'coordinate'];
+        const idealKeywords = ['ideal', 'candidate', 'qualification', 'requirement', 'skill', 'experience'];
+        
+        const hasResponsibilityKeywords = items.some(item => 
+          responsibilityKeywords.some(keyword => item.toLowerCase().includes(keyword))
+        );
+        
+        const hasIdealKeywords = items.some(item => 
+          idealKeywords.some(keyword => item.toLowerCase().includes(keyword))
+        );
+        
+        if (hasResponsibilityKeywords || (!hasIdealKeywords && items.length > 2)) {
+          responsibilities.push(...items);
+        } else if (hasIdealKeywords) {
+          idealFor.push(...items);
+        } else {
+          // Default to responsibilities if we can't determine
+          responsibilities.push(...items);
+        }
+      }
+    }
+  } catch (error) {
+    console.error('Error parsing job description:', error);
+    // Fallback: try to parse the entire content as list items
+    try {
+      const items = parseHtmlList(longDescription);
+      if (items.length > 0) {
+        responsibilities.push(...items);
+      }
+    } catch (fallbackError) {
+      console.error('Fallback parsing also failed:', fallbackError);
     }
   }
   
@@ -511,6 +570,7 @@ export default function CareerPage() {
                     })
                     .map((job, index) => {
                       const parsedJob = parseJobDescription(job.long_description);
+                      console.log(`Job ${job.title}:`, parsedJob); // Debug log
                       return (
                         <div key={job.id}>
                           <h4>
@@ -522,7 +582,7 @@ export default function CareerPage() {
                               <h5>Responsibilities:</h5>
                               <ul className="with-bullets">
                                 {parsedJob.responsibilities.map((resp, respIndex) => (
-                                  <li key={respIndex} dangerouslySetInnerHTML={{ __html: resp }}></li>
+                                  <li key={respIndex}>{resp}</li>
                                 ))}
                               </ul>
                             </>
@@ -532,12 +592,15 @@ export default function CareerPage() {
                               <h5>Ideal For:</h5>
                               <ul className="with-bullets">
                                 {parsedJob.idealFor.map((ideal, idealIndex) => (
-                                  <li key={idealIndex} dangerouslySetInnerHTML={{ __html: ideal }}></li>
+                                  <li key={idealIndex}>{ideal}</li>
                                 ))}
                               </ul>
                             </>
                           )}
-
+                          {/* Fallback: if no parsed content, show raw description */}
+                          {parsedJob.responsibilities.length === 0 && parsedJob.idealFor.length === 0 && job.long_description && (
+                            <div dangerouslySetInnerHTML={{ __html: job.long_description }} />
+                          )}
                         </div>
                       );
                     })}
