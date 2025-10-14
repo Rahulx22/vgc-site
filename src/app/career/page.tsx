@@ -7,11 +7,8 @@ import type { CareerApiResponse, CareerHeaderBlock, CareerSectionBlock, CareerSe
 import type { Metadata } from "next";
 
 // Add static metadata
-export const metadata: Metadata = {
-  title: "Career Opportunities | VGC Consulting",
-  description: "Join VGC Consulting and be part of a team dedicated to empowering businesses with expert financial and tax solutions.",
-  keywords: "career opportunities, job openings, work with us, employment, VGC team",
-};
+// Note: Metadata cannot be exported from client components
+// Move to a separate metadata file or remove "use client" directive if metadata is needed
 
 // Helper function to parse HTML list items
 function parseHtmlList(html: string): string[] {

@@ -8,11 +8,8 @@ import type { ContactApiResponse, ContactAddressBlock, ContactAddress } from "..
 import type { Metadata } from "next";
 
 // Add static metadata
-export const metadata: Metadata = {
-  title: "Contact Us | VGC Consulting",
-  description: "Get in touch with VGC Consulting for business, tax, and compliance solutions. We're here to help your business grow.",
-  keywords: "contact us, business consulting, tax services, compliance solutions, get in touch",
-};
+// Note: Metadata cannot be exported from client components
+// Move to a separate metadata file or remove "use client" directive if metadata is needed
 
 // Transform API data to the format expected by the components
 function transformContactData(apiData: ContactApiResponse) {

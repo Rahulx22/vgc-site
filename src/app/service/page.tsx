@@ -465,8 +465,5 @@ export default function ServicePage() {
 }
 
 // Add dynamic metadata
-export const metadata: Metadata = {
-  title: "Our Services | VGC Consulting",
-  description: "Explore our comprehensive business, tax, and compliance solutions tailored to empower MSMEs, corporates, and global ventures.",
-  keywords: "business services, tax services, compliance services, MSME support, corporate advisory",
-};
+// Note: Metadata cannot be exported from client components
+// Move to a separate metadata file or remove "use client" directive if metadata is needed

@@ -25,7 +25,7 @@ const nextConfig: NextConfig = {
   // Add experimental features for better performance
   experimental: {
     optimizeCss: true, // Optimize CSS
-    optimizePackageImports: true, // Optimize package imports
+    optimizePackageImports: [], // Optimize package imports
   },
   // Add webpack optimizations
   webpack: (config) => {
