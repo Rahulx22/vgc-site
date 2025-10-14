@@ -64,40 +64,48 @@ function mapApiToHomeDataStrict(apiJson: any): HomeData {
   };
 
   const servicesBlock = blocks.find((b: any) => b.type === "services_section");
-  const services = (servicesBlock?.data?.services || []).map((s: any) => ({
-    title: s.title || "",
-    desc: stripHtml(s.short_description || s.long_description || ""),
-    link: s.slug ? `/service/${s.slug}` : s.link ? s.link : "/service",
-  }));
+  const services = (servicesBlock?.data?.services || [])
+    .filter((s: any) => !s.status || s.status === 'active' || s.status === 'Active' || s.status === 'ACTIVE')
+    .map((s: any) => ({
+      title: s.title || "",
+      desc: stripHtml(s.short_description || s.long_description || ""),
+      link: s.slug ? `/service/${s.slug}` : s.link ? s.link : "/service",
+    }));
 
   const blogBlock = blocks.find((b: any) => b.type === "blog_section");
-  const blog = (blogBlock?.data?.blogs || []).map((b: any) => ({
-    id: b.id,
-    date: b.created_at
-      ? new Date(b.created_at).toLocaleDateString("en-GB", { day: "2-digit", month: "long", year: "numeric" })
-      : "",
-    title: b.title || "",
-    excerpt: stripHtml(b.short_description || ""),
-    image: ensureUrl(b.featured_image || b.cover_image),
-    link: b.slug ? `/blog/${b.slug}` : "/blog",
-  }));
+  const blog = (blogBlock?.data?.blogs || [])
+    .filter((b: any) => !b.status || b.status === 'active' || b.status === 'Active' || b.status === 'ACTIVE')
+    .map((b: any) => ({
+      id: b.id,
+      date: b.created_at
+        ? new Date(b.created_at).toLocaleDateString("en-GB", { day: "2-digit", month: "long", year: "numeric" })
+        : "",
+      title: b.title || "",
+      excerpt: stripHtml(b.short_description || ""),
+      image: ensureUrl(b.featured_image || b.cover_image),
+      link: b.slug ? `/blog/${b.slug}` : "/blog",
+    }));
   const blogTitle = blogBlock?.data?.title || "Our Blog";
 
   const clientsBlock = blocks.find((b: any) => b.type === "clients_logo_section");
-  const clients = (clientsBlock?.data?.logos || []).map((c: any) => ({
-    title: c.title || "",
-    icon: ensureUrl(c.logo),
-  }));
+  const clients = (clientsBlock?.data?.logos || [])
+    .filter((c: any) => !c.status || c.status === 'active' || c.status === 'Active' || c.status === 'ACTIVE')
+    .map((c: any) => ({
+      title: c.title || "",
+      icon: ensureUrl(c.logo),
+    }));
   const clientsTitle = clientsBlock?.data?.title || "";
   const clientsSubtitle = clientsBlock?.data?.subtitle || "";
 
   const testimonialsBlock = blocks.find((b: any) => b.type === "testimonials_section");
-  const testimonials = (testimonialsBlock?.data?.items || []).map((t: any) => ({
-    text: t.quote || "",
-    author: t.author || t.item_author || "",
-    rating: String(t.rating ?? "5"),
-    avatar: ensureUrl(t.avatar),
-  }));
+  const testimonials = (testimonialsBlock?.data?.items || [])
+    .filter((t: any) => !t.status || t.status === 'active' || t.status === 'Active' || t.status === 'ACTIVE')
+    .map((t: any) => ({
+      text: t.quote || "",
+      author: t.author || t.item_author || "",
+      rating: String(t.rating ?? "5"),
+      avatar: ensureUrl(t.avatar),
+    }));
 
   const ctaBlock = blocks.find((b: any) => b.type === "cta_section");
   const cta = {

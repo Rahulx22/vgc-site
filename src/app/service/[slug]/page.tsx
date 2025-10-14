@@ -1,5 +1,4 @@
 import { notFound } from "next/navigation";
-import Header from "../../components/Header";
 import Image from "next/image";
 import { fetchWithTimeout, ensureUrl, stripHtml, API_URL } from "../../../lib/api";
 import type { Metadata, ResolvingMetadata } from "next";
@@ -154,7 +153,6 @@ export default async function ServiceDetailPage({ params }: ServiceDetailProps) 
 
   return (
     <>
-      <Header />
       
       <div className="business-banner">
         <div className="container-fluid">

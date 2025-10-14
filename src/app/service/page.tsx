@@ -109,6 +109,7 @@ export default function ServicePage() {
   // ---- Static (keep form as-is) ----
   const [formData, setFormData] = useState({
     name: "",
+    email: "",
     phone: "",
     service: "",
     message: "",
@@ -136,6 +137,7 @@ export default function ServicePage() {
       // Prepare the data to match API expected format
       const submitData = {
         name: formData.name,
+        email: formData.email,
         phone: formData.phone,
         service: formData.service,
         message: formData.message
@@ -155,7 +157,7 @@ export default function ServicePage() {
       }
 
       setSubmitSuccess(true);
-      setFormData({ name: "", phone: "", service: "", message: "" });
+      setFormData({ name: "", email: "", phone: "", service: "", message: "" });
       // Auto-hide success message after 5 seconds
       setTimeout(() => setSubmitSuccess(false), 5000);
     } catch (err: any) {
@@ -247,18 +249,20 @@ export default function ServicePage() {
     > | undefined;
 
     const items =
-      block?.data?.services?.map((s) => {
-        const txt =
-          toPlainText(s.short_description) ||
-          toPlainText(s.sub_heading) ||
-          toPlainText(s.long_description);
-        return {
-          title: s.title,
-          slug: s.slug,
-          link: `/service/${s.slug}`, // ✅ correct route
-          summary: excerpt(txt || `Explore details about ${s.title}`),
-        };
-      }) ?? [];
+      block?.data?.services
+        ?.filter(s => s.status === 'active' || s.status === 'Active' || s.status === 'ACTIVE')
+        ?.map((s) => {
+          const txt =
+            toPlainText(s.short_description) ||
+            toPlainText(s.sub_heading) ||
+            toPlainText(s.long_description);
+          return {
+            title: s.title,
+            slug: s.slug,
+            link: `/service/${s.slug}`, // ✅ correct route
+            summary: excerpt(txt || `Explore details about ${s.title}`),
+          };
+        }) ?? [];
 
     return {
       title: block?.data?.title || "A range of Services Provided by VGC",
@@ -329,6 +333,19 @@ export default function ServicePage() {
                       onChange={handleChange}
                       required
                       aria-label="Full name"
+                    />
+                  </div>
+
+                  <div className="in-box">
+                    <input
+                      className="box"
+                      type="email"
+                      name="email"
+                      placeholder="Email Address"
+                      value={formData.email}
+                      onChange={handleChange}
+                      required
+                      aria-label="Email address"
                     />
                   </div>
 

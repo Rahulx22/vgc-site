@@ -10,14 +10,50 @@ import type { Metadata } from "next";
 // Note: Metadata cannot be exported from client components
 // Move to a separate metadata file or remove "use client" directive if metadata is needed
 
+// Helper function to decode HTML entities
+function decodeHtmlEntities(text: string): string {
+  const textArea = document.createElement('textarea');
+  textArea.innerHTML = text;
+  return textArea.value;
+}
+
 // Helper function to parse HTML list items
 function parseHtmlList(html: string): string[] {
   const items: string[] = [];
-  const regex = /<li[^>]*>\s*<p[^>]*>([^<]+)<\/p>\s*<\/li>/g;
-  let match;
   
-  while ((match = regex.exec(html)) !== null) {
-    items.push(match[1].trim());
+  // Try multiple parsing approaches
+  if (!html) return items;
+  
+  // Approach 1: Look for <li> tags with <p> inside
+  const regex1 = /<li[^>]*>\s*<p[^>]*>([^<]+)<\/p>\s*<\/li>/g;
+  let match1;
+  while ((match1 = regex1.exec(html)) !== null) {
+    items.push(decodeHtmlEntities(match1[1].trim()));
+  }
+  
+  // If no items found, try <li> tags with direct text content
+  if (items.length === 0) {
+    const regex2 = /<li[^>]*>(?:\s*<[^>]*>)*([^<]+)(?:<[^>]*>\s*)*<\/li>/g;
+    let match2;
+    while ((match2 = regex2.exec(html)) !== null) {
+      const cleanText = match2[1].trim();
+      if (cleanText && !cleanText.startsWith('<')) {
+        items.push(decodeHtmlEntities(cleanText));
+      }
+    }
+  }
+  
+  // If still no items, try a simpler approach
+  if (items.length === 0) {
+    const regex3 = /<li[^>]*>(.*?)<\/li>/g;
+    let match3;
+    while ((match3 = regex3.exec(html)) !== null) {
+      // Remove any remaining HTML tags from the content
+      const cleanText = match3[1].replace(/<[^>]*>/g, '').trim();
+      if (cleanText) {
+        items.push(decodeHtmlEntities(cleanText));
+      }
+    }
   }
   
   return items;
@@ -28,14 +64,27 @@ function parseJobDescription(longDescription: string) {
   const responsibilities: string[] = [];
   const idealFor: string[] = [];
   
+  // Debug: Log the raw long description
+  console.log('Raw long description:', longDescription);
+  
   // Split by h5 tags to get sections
   const sections = longDescription.split(/<h5[^>]*>([^<]+)<\/h5>/);
+  
+  // Debug: Log the sections
+  console.log('Sections:', sections);
   
   for (let i = 1; i < sections.length; i += 2) {
     const title = sections[i].trim();
     const content = sections[i + 1] || '';
     
+    // Debug: Log each section
+    console.log('Section title:', title);
+    console.log('Section content:', content);
+    
     const items = parseHtmlList(content);
+    
+    // Debug: Log parsed items
+    console.log('Parsed items:', items);
     
     if (title.toLowerCase().includes('responsibilities')) {
       responsibilities.push(...items);
@@ -66,6 +115,8 @@ export default function CareerPage() {
     degree: "",
     personalNote: ""
   });
+  const [resume, setResume] = useState<File | null>(null);
+  const [resumePreview, setResumePreview] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchCareerData = async () => {
@@ -102,6 +153,31 @@ export default function CareerPage() {
     fetchCareerData();
   }, []);
 
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+    setFormData({
+      ...formData,
+      [e.target.name]: e.target.value
+    });
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      const file = e.target.files[0];
+      setResume(file);
+      
+      // Create preview for image files
+      if (file.type.startsWith('image/')) {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          setResumePreview(e.target?.result as string);
+        };
+        reader.readAsDataURL(file);
+      } else {
+        setResumePreview(null);
+      }
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setSubmitting(true);
@@ -109,24 +185,25 @@ export default function CareerPage() {
     
     try {
       // Prepare the data to match API expected format
-      const submitData = {
-        first_name: formData.firstName,
-        last_name: formData.lastName,
-        email: formData.email,
-        phone: formData.phone,
-        city: formData.city,
-        position: formData.position,
-        linkedin_url: formData.linkedin,
-        degree: formData.degree,
-        personal_note: formData.personalNote
-      };
+      const submitData = new FormData();
+      submitData.append('first_name', formData.firstName);
+      submitData.append('last_name', formData.lastName);
+      submitData.append('email', formData.email);
+      submitData.append('phone', formData.phone);
+      submitData.append('city', formData.city);
+      submitData.append('position', formData.position);
+      submitData.append('linkedin_url', formData.linkedin);
+      submitData.append('degree', formData.degree);
+      submitData.append('personal_note', formData.personalNote);
+      
+      // Add resume file if selected
+      if (resume) {
+        submitData.append('resume', resume);
+      }
 
       const response = await fetch("https://vgc.psofttechnologies.in/api/v1/resume-form", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(submitData),
+        body: submitData,
       });
 
       if (!response.ok) {
@@ -149,6 +226,8 @@ export default function CareerPage() {
         degree: "",
         personalNote: ""
       });
+      setResume(null);
+      setResumePreview(null);
       
       // Hide success message after 5 seconds
       setTimeout(() => {
@@ -160,13 +239,6 @@ export default function CareerPage() {
     } finally {
       setSubmitting(false);
     }
-  };
-
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value
-    });
   };
 
   if (loading) {
@@ -329,9 +401,9 @@ export default function CareerPage() {
                       <div className="in-box">
                         <label>Position</label>
                         <select className="box" name="position" value={formData.position} onChange={handleChange} required>
-                          <option value="">Position</option>
+                          <option value="">Select Position</option>
                           {sectionData.jobs && sectionData.jobs.map((job) => (
-                            <option key={job.id} value={job.slug}>{job.roles || job.title}</option>
+                            <option key={job.id} value={job.title}>{job.title}</option>
                           ))}
                           <option value="other">Other</option>
                         </select>
@@ -339,12 +411,12 @@ export default function CareerPage() {
                     </div>
                     <div className="col-lg-3 col-md-4">
                       <div className="in-box">
-                        <label>Linkedin Profile URL</label>
+                        <label>LinkedIn Profile URL</label>
                         <input 
                           className="box" 
                           type="url" 
                           name="linkedin"
-                          placeholder="rahul-goyal-87a69a1aa/"
+                          placeholder="https://linkedin.com/in/username"
                           value={formData.linkedin}
                           onChange={handleChange}
                         />
@@ -354,11 +426,32 @@ export default function CareerPage() {
                       <div className="in-box">
                         <label>Bachelor&apos;s Degree</label>
                         <select className="box" name="degree" value={formData.degree} onChange={handleChange}>
-                          <option value="">Bachelor&apos;s Degree</option>
+                          <option value="">Select Degree</option>
                           <option value="commerce">Commerce</option>
                           <option value="accounting">Accounting</option>
                           <option value="finance">Finance</option>
+                          <option value="other">Other</option>
                         </select>
+                      </div>
+                    </div>
+                    <div className="col-lg-6 col-md-12">
+                      <div className="in-box">
+                        <label>Upload Resume</label>
+                        <input 
+                          className="box" 
+                          type="file" 
+                          name="resume"
+                          accept=".pdf,.doc,.docx,.txt,.rtf,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/msword"
+                          onChange={handleFileChange}
+                        />
+                        {resumePreview && (
+                          <div className="mt-2">
+                            <small>Selected file: {resume?.name}</small>
+                            {resume?.type.startsWith('image/') && (
+                              <img src={resumePreview} alt="Resume preview" style={{ maxWidth: '200px', maxHeight: '200px' }} />
+                            )}
+                          </div>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -368,7 +461,7 @@ export default function CareerPage() {
                     <textarea 
                       className="box" 
                       name="personalNote"
-                      placeholder="Personal Note" 
+                      placeholder="Tell us why you're interested in joining our team..." 
                       rows={5}
                       value={formData.personalNote}
                       onChange={handleChange}
@@ -377,7 +470,7 @@ export default function CareerPage() {
                   <input 
                     type="submit" 
                     className="call-btn" 
-                    value={submitting ? "Submitting..." : "Submit →"} 
+                    value={submitting ? "Submitting..." : "Submit Application →"} 
                     disabled={submitting}
                   />
                 </form>
@@ -402,40 +495,55 @@ export default function CareerPage() {
               {sectionData.jobs && sectionData.jobs.length > 0 && (
                 <div className="career-box">
                   <h3>Current Openings</h3>
-                  {sectionData.jobs.map((job, index) => {
-                    const parsedJob = parseJobDescription(job.long_description);
-                    return (
-                      <div key={job.id}>
-                        <h4>
-                          {job.title} 
-                          <a className="call-btn" href={`#job-${job.id}`}>Learn More</a>
-                        </h4>
-                        {parsedJob.responsibilities.length > 0 && (
-                          <>
-                            <h5>Responsibilities:</h5>
-                            <ul>
-                              {parsedJob.responsibilities.map((resp, respIndex) => (
-                                <li key={respIndex}>{resp}</li>
-                              ))}
-                            </ul>
-                          </>
-                        )}
-                        {parsedJob.idealFor.length > 0 && (
-                          <>
-                            <h5>Ideal For:</h5>
-                            <ul>
-                              {parsedJob.idealFor.map((ideal, idealIndex) => (
-                                <li key={idealIndex}>{ideal}</li>
-                              ))}
-                            </ul>
-                          </>
-                        )}
-                      </div>
-                    );
-                  })}
+                  {/* Filter jobs to show only active ones and sort them */}
+                  {sectionData.jobs
+                    .filter(job => job.status === 'active' || job.status === 'Active' || job.status === 'ACTIVE')
+                    .sort((a, b) => {
+                      // Define custom order - more specific matching
+                      const getOrder = (title: string) => {
+                        const lowerTitle = title.toLowerCase();
+                        if (lowerTitle.includes('senior consultant')) return 0;
+                        if (lowerTitle.includes('developer') && !lowerTitle.includes('senior consultant')) return 1;
+                        return 2; // All other jobs
+                      };
+                      
+                      return getOrder(a.title) - getOrder(b.title);
+                    })
+                    .map((job, index) => {
+                      const parsedJob = parseJobDescription(job.long_description);
+                      return (
+                        <div key={job.id}>
+                          <h4>
+                            {job.title} 
+                            <a className="call-btn" href={`#job-${job.id}`}>Learn More</a>
+                          </h4>
+                          {parsedJob.responsibilities.length > 0 && (
+                            <>
+                              <h5>Responsibilities:</h5>
+                              <ul className="with-bullets">
+                                {parsedJob.responsibilities.map((resp, respIndex) => (
+                                  <li key={respIndex} dangerouslySetInnerHTML={{ __html: resp }}></li>
+                                ))}
+                              </ul>
+                            </>
+                          )}
+                          {parsedJob.idealFor.length > 0 && (
+                            <>
+                              <h5>Ideal For:</h5>
+                              <ul className="with-bullets">
+                                {parsedJob.idealFor.map((ideal, idealIndex) => (
+                                  <li key={idealIndex} dangerouslySetInnerHTML={{ __html: ideal }}></li>
+                                ))}
+                              </ul>
+                            </>
+                          )}
+
+                        </div>
+                      );
+                    })}
                 </div>
               )}
-              
+
               {sectionData.right_section.map((section, index) => (
                 <div key={index} className="career-box">
                   <h3>{section.title}</h3>

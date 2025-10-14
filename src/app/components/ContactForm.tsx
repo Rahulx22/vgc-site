@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 interface ContactFormProps {
   title: string;
@@ -9,19 +9,78 @@ interface ContactFormProps {
 type ContactFormData = {
   name: string;
   email: string;
+  phone: string;
+  service: string;
   message: string;
+};
+
+type ServiceItem = {
+  title: string;
+  slug: string;
+  link: string;
+  summary: string;
 };
 
 export default function ContactForm({ title }: ContactFormProps) {
   const [formData, setFormData] = useState<ContactFormData>({
     name: "",
     email: "",
+    phone: "",
+    service: "",
     message: ""
   });
   
+  const [services, setServices] = useState<ServiceItem[]>([]);
+  const [loadingServices, setLoadingServices] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [submitSuccess, setSubmitSuccess] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
+
+  // Load services data from API
+  useEffect(() => {
+    const fetchServices = async () => {
+      try {
+        setLoadingServices(true);
+        const res = await fetch("https://vgc.psofttechnologies.in/api/v1/pages", { 
+          cache: "no-store" 
+        });
+        
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const json = await res.json();
+        
+        const servicesPage = 
+          json?.data?.find((p: any) => p.slug === "services") ||
+          json?.data?.find((p: any) => p.type === "services") ||
+          null;
+          
+        if (servicesPage) {
+          const servicesBlock = servicesPage.blocks?.find((b: any) => b.type === "services_section");
+          if (servicesBlock && servicesBlock.data?.services) {
+            const serviceItems = servicesBlock.data.services.map((s: any) => ({
+              title: s.title,
+              slug: s.slug,
+              link: `/service/${s.slug}`,
+              summary: s.short_description || s.sub_heading || s.long_description || ""
+            }));
+            setServices(serviceItems);
+          }
+        }
+      } catch (err) {
+        console.error("Error fetching services:", err);
+        // Fallback to static data if API fails
+        const fallbackServices = [
+          { title: "Business Support", slug: "business-support", link: "#", summary: "" },
+          { title: "Direct Tax Services", slug: "direct-tax", link: "#", summary: "" },
+          { title: "Indirect Tax Services", slug: "indirect-tax", link: "#", summary: "" }
+        ];
+        setServices(fallbackServices);
+      } finally {
+        setLoadingServices(false);
+      }
+    };
+
+    fetchServices();
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -33,6 +92,8 @@ export default function ContactForm({ title }: ContactFormProps) {
       const submitData = {
         name: formData.name,
         email: formData.email,
+        phone: formData.phone,
+        service: formData.service,
         message: formData.message
       };
 
@@ -56,6 +117,8 @@ export default function ContactForm({ title }: ContactFormProps) {
       setFormData({
         name: "",
         email: "",
+        phone: "",
+        service: "",
         message: ""
       });
       
@@ -71,7 +134,7 @@ export default function ContactForm({ title }: ContactFormProps) {
     }
   };
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     setFormData({
       ...formData,
       [e.target.name]: e.target.value
@@ -117,6 +180,36 @@ export default function ContactForm({ title }: ContactFormProps) {
           />
         </div>
         <div className="in-box">
+          <label>Phone Number</label>
+          <input 
+            className="box" 
+            type="tel" 
+            name="phone"
+            placeholder="Enter your phone number"
+            value={formData.phone}
+            onChange={handleChange}
+            required
+          />
+        </div>
+        <div className="in-box">
+          <label>Service Type</label>
+          <select 
+            className="box" 
+            name="service"
+            value={formData.service}
+            onChange={handleChange}
+            required
+            disabled={loadingServices}
+          >
+            <option value="">{loadingServices ? "Loading services..." : "Select a Service"}</option>
+            {services.map((service) => (
+              <option key={service.slug} value={service.title}>
+                {service.title}
+              </option>
+            ))}
+          </select>
+        </div>
+        <div className="in-box">
           <label>Message</label>
           <textarea 
             className="box" 
@@ -132,7 +225,7 @@ export default function ContactForm({ title }: ContactFormProps) {
           type="submit" 
           className="call-btn" 
           value={submitting ? "Sending..." : "Send"} 
-          disabled={submitting}
+          disabled={submitting || loadingServices}
         />
       </form>
     </div>

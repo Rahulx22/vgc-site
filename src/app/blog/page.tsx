@@ -76,14 +76,16 @@ export default async function BlogPage() {
     date: string;
     slug: string;
   }> = Array.isArray(blogBlock?.data?.blogs)
-    ? blogBlock!.data.blogs.map((b: any) => ({
-        id: b.id,
-        title: b.title,
-        excerpt: stripHtml(b.short_description),
-        image: ensureUrl(b.featured_image || b.cover_image),
-        date: formatDate(b.created_at),
-        slug: b.slug,
-      }))
+    ? blogBlock!.data.blogs
+        .filter((b: any) => !b.status || b.status === 'active' || b.status === 'Active' || b.status === 'ACTIVE')
+        .map((b: any) => ({
+          id: b.id,
+          title: b.title,
+          excerpt: stripHtml(b.short_description),
+          image: ensureUrl(b.featured_image || b.cover_image),
+          date: formatDate(b.created_at),
+          slug: b.slug,
+        }))
     : [];
 
   const pageTitle = blogBlock?.data?.title || banner?.title || "Our Blog";
