@@ -79,30 +79,17 @@ function parseJobDescription(longDescription: string) {
     return { responsibilities, idealFor };
   }
   
-  // Debug: Log the raw long description
-  console.log('Raw long description:', longDescription);
-  
   try {
     // Try to find sections by h5 tags first
     if (longDescription.includes('<h5')) {
       // Split by h5 tags to get sections
       const sections = longDescription.split(/<h5[^>]*>([^<]+)<\/h5>/i);
       
-      // Debug: Log the sections
-      console.log('Sections:', sections);
-      
       for (let i = 1; i < sections.length; i += 2) {
         const title = sections[i] ? sections[i].trim() : '';
         const content = sections[i + 1] || '';
         
-        // Debug: Log each section
-        console.log('Section title:', title);
-        console.log('Section content:', content);
-        
         const items = parseHtmlList(content);
-        
-        // Debug: Log parsed items
-        console.log('Parsed items:', items);
         
         if (title.toLowerCase().includes('responsibilities') || title.toLowerCase().includes('responsibility')) {
           responsibilities.push(...items);
@@ -155,6 +142,32 @@ function parseJobDescription(longDescription: string) {
   return { responsibilities, idealFor };
 }
 
+// Helper function to extract role type from job title
+function extractRoleType(title: string): string {
+  // Common role categories
+  const roleCategories = [
+    'developer', 'engineer', 'programmer',
+    'consultant', 'advisor', 'specialist',
+    'manager', 'director', 'lead',
+    'accountant', 'accountant',
+    'analyst', 'associate',
+    'senior', 'jr', 'junior'
+  ];
+  
+  const lowerTitle = title.toLowerCase();
+  
+  // Check for specific role categories
+  for (const category of roleCategories) {
+    if (lowerTitle.includes(category)) {
+      // Capitalize first letter
+      return category.charAt(0).toUpperCase() + category.slice(1);
+    }
+  }
+  
+  // Default to "Other" if no category found
+  return "Other";
+}
+
 export default function CareerPage() {
   const [careerData, setCareerData] = useState<CareerApiResponse | null>(null);
   const [loading, setLoading] = useState(true);
@@ -162,7 +175,7 @@ export default function CareerPage() {
   const [submitting, setSubmitting] = useState(false);
   const [submitSuccess, setSubmitSuccess] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
-  
+
   const [formData, setFormData] = useState({
     firstName: "",
     lastName: "",
@@ -330,6 +343,11 @@ export default function CareerPage() {
 
   const headerData = headerBlock.data;
   const sectionData = sectionBlock.data;
+
+  // Extract active jobs (without filtering)
+  const activeJobs = sectionData.jobs?.filter(job => 
+    job.status === 'active' || job.status === 'Active' || job.status === 'ACTIVE'
+  ) || [];
 
   return (
     <>     
@@ -536,13 +554,9 @@ export default function CareerPage() {
               </div>
             </div>
             
-            <div className="col-xl-12 col-lg-12 col-md-12">
-              <Image className="filter-img" src="/images/filter.png" alt="filter" width={1200} height={200} />
-            </div>
-            
             <div className="col-xl-6 col-lg-6 col-md-12">
               {sectionData.left_section.map((section, index) => (
-                <div key={index} className="career-box">
+                <div key={index} className="career-box career-box-top-spacing">
                   <h3>{section.title}</h3>
                   <div dangerouslySetInnerHTML={{ __html: section.description }} />
                 </div>
@@ -552,58 +566,76 @@ export default function CareerPage() {
             <div className="col-xl-6 col-lg-6 col-md-12">
               {/* Show job openings if available */}
               {sectionData.jobs && sectionData.jobs.length > 0 && (
-                <div className="career-box">
+                <div className="career-box career-box-top-spacing">
                   <h3>Current Openings</h3>
-                  {/* Filter jobs to show only active ones and sort them */}
-                  {sectionData.jobs
-                    .filter(job => job.status === 'active' || job.status === 'Active' || job.status === 'ACTIVE')
-                    .sort((a, b) => {
-                      // Define custom order - more specific matching
-                      const getOrder = (title: string) => {
-                        const lowerTitle = title.toLowerCase();
-                        if (lowerTitle.includes('senior consultant')) return 0;
-                        if (lowerTitle.includes('developer') && !lowerTitle.includes('senior consultant')) return 1;
-                        return 2; // All other jobs
-                      };
-                      
-                      return getOrder(a.title) - getOrder(b.title);
-                    })
-                    .map((job, index) => {
-                      const parsedJob = parseJobDescription(job.long_description);
-                      console.log(`Job ${job.title}:`, parsedJob); // Debug log
-                      return (
-                        <div key={job.id}>
-                          <h4>
-                            {job.title} 
-                            <a className="call-btn" href={`#job-${job.id}`}>Learn More</a>
-                          </h4>
-                          {parsedJob.responsibilities.length > 0 && (
-                            <>
-                              <h5>Responsibilities:</h5>
-                              <ul className="with-bullets">
-                                {parsedJob.responsibilities.map((resp, respIndex) => (
-                                  <li key={respIndex}>{resp}</li>
-                                ))}
-                              </ul>
-                            </>
-                          )}
-                          {parsedJob.idealFor.length > 0 && (
-                            <>
-                              <h5>Ideal For:</h5>
-                              <ul className="with-bullets">
-                                {parsedJob.idealFor.map((ideal, idealIndex) => (
-                                  <li key={idealIndex}>{ideal}</li>
-                                ))}
-                              </ul>
-                            </>
-                          )}
-                          {/* Fallback: if no parsed content, show raw description */}
-                          {parsedJob.responsibilities.length === 0 && parsedJob.idealFor.length === 0 && job.long_description && (
-                            <div dangerouslySetInnerHTML={{ __html: job.long_description }} />
-                          )}
-                        </div>
-                      );
-                    })}
+                  
+                  {/* Scrollable container for job listings */}
+                  <div className="job-listings-scroll">
+                    {/* Show only active jobs without filtering */}
+                    {activeJobs
+                      .sort((a: CareerJob, b: CareerJob) => {
+                        // Define custom order - more specific matching
+                        const getOrder = (title: string) => {
+                          const lowerTitle = title.toLowerCase();
+                          if (lowerTitle.includes('senior consultant')) return 0;
+                          if (lowerTitle.includes('developer') && !lowerTitle.includes('senior consultant')) return 1;
+                          return 2; // All other jobs
+                        };
+                        
+                        return getOrder(a.title) - getOrder(b.title);
+                      })
+                      .map((job: CareerJob, index: number) => {
+                        const parsedJob = parseJobDescription(job.long_description);
+                        return (
+                          <div key={job.id} id={`job-${job.id}`} style={{ marginBottom: '20px' }}>
+                            <h4>
+                              {job.title} 
+                              {job.job_description_doc ? (
+                                <a 
+                                  className="call-btn" 
+                                  href={ensureUrl(job.job_description_doc)} 
+                                  target="_blank" 
+                                  rel="noopener noreferrer"
+                                  style={{ marginLeft: '10px' }}
+                                  download={`VGC-${job.title.replace(/\s+/g, '-')}.pdf`}
+                                  aria-label={`Download job description for ${job.title}`}
+                                >
+                                  Download PDF
+                                </a>
+                              ) : (
+                                <a className="call-btn" href={`#job-${job.id}`} style={{ marginLeft: '10px' }}>
+                                  Learn More
+                                </a>
+                              )}
+                            </h4>
+                            {parsedJob.responsibilities.length > 0 && (
+                              <>
+                                <h5>Responsibilities:</h5>
+                                <ul className="with-bullets">
+                                  {parsedJob.responsibilities.map((resp, respIndex) => (
+                                    <li key={respIndex}>{resp}</li>
+                                  ))}
+                                </ul>
+                              </>
+                            )}
+                            {parsedJob.idealFor.length > 0 && (
+                              <>
+                                <h5>Ideal For:</h5>
+                                <ul className="with-bullets">
+                                  {parsedJob.idealFor.map((ideal, idealIndex) => (
+                                    <li key={idealIndex}>{ideal}</li>
+                                  ))}
+                                </ul>
+                              </>
+                            )}
+                            {/* Fallback: if no parsed content, show raw description */}
+                            {parsedJob.responsibilities.length === 0 && parsedJob.idealFor.length === 0 && job.long_description && (
+                              <div dangerouslySetInnerHTML={{ __html: job.long_description }} />
+                            )}
+                          </div>
+                        );
+                      })}
+                  </div>
                 </div>
               )}
 

@@ -163,6 +163,7 @@ export interface CareerJob {
   status: string;
   created_at: string;
   updated_at: string;
+  job_description_doc?: string | null;
 }
 
 export interface CareerSection {
