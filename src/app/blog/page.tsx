@@ -4,7 +4,7 @@ import { API_URL, fetchWithTimeout, ensureUrl, stripHtml } from "../../lib/api";
 import type { Metadata } from "next";
 
 export const dynamic = "force-dynamic";
-export const revalidate = 0;
+export const revalidate = 300; // Revalidate every 5 minutes
 
 // Add dynamic metadata
 export const metadata: Metadata = {
@@ -43,7 +43,10 @@ function formatDate(iso?: string) {
 
 async function getBlogPage(): Promise<ApiPage | null> {
   try {
-    const res = await fetchWithTimeout(API_URL, { cache: "no-store" });
+    const res = await fetchWithTimeout(API_URL, { 
+      cache: "force-cache",
+      next: { revalidate: 300 } // Cache for 5 minutes (300 seconds)
+    });
     if (!res.ok) {
       console.error(`Blog API returned status ${res.status}`);
       return null;

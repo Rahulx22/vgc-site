@@ -36,8 +36,11 @@ export default function ContactUsPage() {
     const fetchContactData = async () => {
       try {
         setLoading(true);
-        // Fetch all pages from API following the established pattern
-        const response = await fetchWithTimeout(API_URL, { cache: 'no-store' });
+        // Fetch all pages from API with 5-minute caching
+        const response = await fetchWithTimeout(API_URL, { 
+          cache: 'force-cache',
+          next: { revalidate: 300 } // Cache for 5 minutes (300 seconds)
+        });
         
         if (!response.ok) {
           throw new Error(`Failed to fetch pages data: ${response.status}`);

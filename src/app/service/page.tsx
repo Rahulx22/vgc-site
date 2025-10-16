@@ -179,7 +179,11 @@ export default function ServicePage() {
         setLoading(true);
         setErr(null);
 
-        const res = await fetch(API_URL, { cache: "no-store" });
+        // Use fetchWithTimeout with caching for 5 minutes
+        const res = await fetch(API_URL, { 
+          cache: "force-cache",
+          next: { revalidate: 300 } // Cache for 5 minutes (300 seconds)
+        });
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const json: CMSResponse = await res.json();
 

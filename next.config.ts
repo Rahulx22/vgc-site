@@ -20,12 +20,35 @@ const nextConfig: NextConfig = {
     deviceSizes: [640, 750, 828, 1080, 1200, 1920, 2048, 3840],
     imageSizes: [16, 32, 48, 64, 96, 128, 256, 384],
     formats: ['image/webp'], // Use WebP format for better compression
-    minimumCacheTTL: 60, // Cache images for 1 minute
+    minimumCacheTTL: 300, // Cache images for 5 minutes (300 seconds)
   },
   // Add experimental features for better performance
   experimental: {
     optimizeCss: true, // Optimize CSS
     optimizePackageImports: [], // Optimize package imports
+  },
+  // Configure caching headers
+  async headers() {
+    return [
+      {
+        source: "/:path*",
+        headers: [
+          {
+            key: "Cache-Control",
+            value: "public, max-age=0, must-revalidate, s-maxage=300", // 5 minutes shared cache
+          },
+        ],
+      },
+      {
+        source: "/_next/static/:path*",
+        headers: [
+          {
+            key: "Cache-Control",
+            value: "public, max-age=31536000, immutable", // 1 year for static assets
+          },
+        ],
+      },
+    ];
   },
   // Add webpack optimizations
   webpack: (config) => {

@@ -1,4 +1,6 @@
 // lib/api.ts
+import { DEFAULT_CACHE_OPTIONS } from './cache';
+
 export const API_URL = "https://vgc.psofttechnologies.in/api/v1/pages";
 export const SETTINGS_URL = "https://vgc.psofttechnologies.in/api/v1/settings";
 export const IMAGE_BASE = "https://vgc.psofttechnologies.in/storage/builder/";
@@ -12,7 +14,7 @@ export async function fetchWithTimeout(input: RequestInfo, init: RequestInit = {
   try {
     // Add default caching if not specified
     const fetchInit = {
-      next: { revalidate: 300 }, // Cache for 5 minutes by default
+      ...DEFAULT_CACHE_OPTIONS, // Use 5-minute cache by default
       ...init
     };
     

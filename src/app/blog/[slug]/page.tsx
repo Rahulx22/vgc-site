@@ -75,7 +75,10 @@ function parseHtmlContent(html: string) {
 
 async function getBlogPost(slug: string): Promise<BlogPost | null> {
   try {
-    const res = await fetchWithTimeout(API_URL, { cache: "no-store" });
+    const res = await fetchWithTimeout(API_URL, { 
+      cache: "force-cache",
+      next: { revalidate: 300 } // Cache for 5 minutes (300 seconds)
+    });
     if (!res.ok) {
       console.error(`Blog API returned status ${res.status}`);
       return null;
@@ -179,7 +182,10 @@ export default async function BlogSinglePage({ params }: BlogSingleProps) {
 
 export async function generateStaticParams() {
   try {
-    const res = await fetchWithTimeout(API_URL, { cache: "no-store" });
+    const res = await fetchWithTimeout(API_URL, { 
+      cache: "force-cache",
+      next: { revalidate: 300 } // Cache for 5 minutes (300 seconds)
+    });
     if (!res.ok) return [];
     
     const json = await res.json();
