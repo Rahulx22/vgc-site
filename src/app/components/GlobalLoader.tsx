@@ -14,19 +14,19 @@ export default function GlobalLoader() {
         // Add small delay for better user experience
         setTimeout(() => {
           setLoading(false);
-        }, 200);
+        }, 100);
       })
       .catch(() => {
         // In case of any errors, still hide loader after a delay
         setTimeout(() => {
           setLoading(false);
-        }, 500);
+        }, 300);
       });
 
     // Fallback timeout to ensure loader doesn't stay forever
     const timeout = setTimeout(() => {
       setLoading(false);
-    }, 3000);
+    }, 2000);
 
     return () => {
       clearTimeout(timeout);

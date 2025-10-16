@@ -303,8 +303,7 @@ header .cont-btn, .main .count-list, .contact-sec.dd .col-xl-12 { display:none; 
 .main img { height:640px; }
 .main .carousel-caption, .copy-txt h6 { text-align:center; }
 .main h1, .ready-sec h2, .business-banner h1, .business-box h2 { font-size:30px; line-height:1.3; }
-.main p, .ready-sec p, .service-banner p { font-size:17px; text-align:center; min-height: 80px; }
-.service-banner h1 { font-size:32px; min-height: 80px; }
+.main p, .ready-sec p, .service-banner p { font-size:17px; text-align:center; }
 .main .carousel-control-prev, .main .carousel-control-next { width:38px; }
 .main .carousel-control-prev span, .main .carousel-control-next span { background-size:15px; height:30px; width:30px; }
 .count-list { border-top:none; gap:18px; justify-content:center; margin:0 0 20px; padding:0; text-align:center; }

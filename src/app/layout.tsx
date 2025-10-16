@@ -81,38 +81,41 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         {/* Performance monitoring (only in development) */}
         <PerformanceMonitor />
 
-        {/* Load critical scripts first */}
+        {/* Load critical scripts first with optimized strategy */}
         <Script 
           src="https://code.jquery.com/jquery-3.7.1.min.js" 
-          strategy="beforeInteractive" 
+          strategy="beforeInteractive"
+          defer
         />
         
         {/* Load animation library after critical content */}
         <Script 
           src="https://unpkg.com/aos@2.3.1/dist/aos.js" 
-          strategy="lazyOnload" 
+          strategy="afterInteractive"
+          defer
         />
         
         {/* Load bootstrap after jQuery */}
         <Script 
           src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.1.3/js/bootstrap.min.js" 
-          strategy="lazyOnload" 
+          strategy="afterInteractive"
+          defer
         />
         
         {/* Load other libraries with lazy loading */}
         <Script 
           src="https://cdnjs.cloudflare.com/ajax/libs/classie/1.0.1/classie.js" 
-          strategy="lazyOnload" 
+          strategy="lazyOnload"
         />
         <Script 
           src="https://cdnjs.cloudflare.com/ajax/libs/OwlCarousel2/2.3.4/owl.carousel.min.js" 
-          strategy="lazyOnload" 
+          strategy="lazyOnload"
         />
         
         {/* Load custom scripts last */}
         <Script 
           src="/js/custom.js" 
-          strategy="lazyOnload" 
+          strategy="lazyOnload"
         />
       </body>
     </html>

@@ -11,11 +11,16 @@ export default function AOSProvider({ children }: { children: React.ReactNode })
   useEffect(() => {
     // Initialize AOS with optimized settings
     AOS.init({
-      duration: 600, // Reduced from 900
+      duration: 400, // Reduced from 600 for better performance
       once: true,
       easing: "ease-out",
-      offset: 100, // Reduced offset to trigger animations sooner
+      offset: 80, // Reduced offset to trigger animations sooner
       delay: 0, // Remove delay for better perceived performance
+      disable: function() {
+        // Disable AOS on low-end devices or when prefers-reduced-motion is enabled
+        return window.matchMedia('(prefers-reduced-motion: reduce)').matches || 
+               window.innerWidth < 768; // Disable on mobile for better performance
+      }
     });
   }, []);
 
@@ -23,7 +28,7 @@ export default function AOSProvider({ children }: { children: React.ReactNode })
     // Only refresh on route changes, not on every render
     const timeout = setTimeout(() => {
       AOS.refreshHard();
-    }, 100);
+    }, 50);
     
     return () => clearTimeout(timeout);
   }, [pathname]);

@@ -39,52 +39,37 @@ document.addEventListener('DOMContentLoaded', function() {
   
   initHeaderShrink();
 
-  // Initialize OwlCarousel with better performance settings
-  if (typeof jQuery !== 'undefined' && jQuery.fn.owlCarousel) {
-    const testimonialCarousel = document.getElementById('testimonial-sec');
-    if (testimonialCarousel) {
-      jQuery("#testimonial-sec").owlCarousel({
-        items: 1,
-        loop: true,
-        autoplay: true,
-        autoplayTimeout: 5000, // Increased timeout
-        autoplayHoverPause: true,
-        nav: false,
-        dots: false,
-        autoplaySpeed: 800, // Reduced speed
-        responsive: {
-          0: { items: 1 },
-          320: { items: 1 }
+  // Replace OwlCarousel with CSS-based carousel for better performance
+  // This will be handled by CSS only, removing the jQuery dependency
+
+  // Optimize counter animation with vanilla JS
+  const counterElements = document.querySelectorAll('.counter-count');
+  counterElements.forEach(function(element) {
+    const countTo = parseInt(element.textContent) || 0;
+    
+    // Only animate if element is in viewport
+    const observer = new IntersectionObserver(function(entries) {
+      entries.forEach(function(entry) {
+        if (entry.isIntersecting) {
+          let start = 0;
+          const duration = 2000; // 2 seconds
+          const increment = countTo / (duration / 16); // 60fps approximation
+          
+          const timer = setInterval(function() {
+            start += increment;
+            if (start >= countTo) {
+              element.textContent = countTo;
+              clearInterval(timer);
+            } else {
+              element.textContent = Math.ceil(start);
+            }
+          }, 16);
+          
+          observer.unobserve(entry.target);
         }
       });
-    }
-  }
-
-  // Optimize counter animation
-  if (typeof jQuery !== 'undefined') {
-    jQuery('.counter-count').each(function () {
-      const $this = jQuery(this);
-      const countTo = $this.text();
-      
-      // Only animate if element is in viewport
-      const observer = new IntersectionObserver(function(entries) {
-        entries.forEach(function(entry) {
-          if (entry.isIntersecting) {
-            $this.prop('Counter', 0).animate({
-              Counter: countTo
-            }, {
-              duration: 3000, // Reduced duration
-              easing: 'swing',
-              step: function (now) {
-                $this.text(Math.ceil(now));
-              }
-            });
-            observer.unobserve(entry.target);
-          }
-        });
-      });
-      
-      observer.observe(this);
     });
-  }
+    
+    observer.observe(element);
+  });
 });

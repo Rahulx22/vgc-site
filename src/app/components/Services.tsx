@@ -54,8 +54,8 @@ export default function Services({ services, offerings }: ServicesProps) {
               Our Services
             </h2>
             <div className="row">
-              {services.map((s) => (
-                <div key={s.title} className="col-lg-6 col-md-6">
+              {services.map((s, index) => (
+                <div key={`${s.title}-${index}`} className="col-lg-6 col-md-6">
                   <div
                     className="serv-box"
                     data-aos="zoom-in"
@@ -69,12 +69,15 @@ export default function Services({ services, offerings }: ServicesProps) {
                         height={20}
                         loading="eager"
                         quality={90}
+                        // Add performance optimizations
+                        placeholder="blur"
+                        blurDataURL="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAiIGhlaWdodD0iMjAiIHZpZXdCb3g9IjAgMCAyMCAyMCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZD0iTTggMTAuODg4OUwxMC41IDguMzg4ODlMMTQgMTIuMjIyMkwxMC41IDE2LjA1NTVMOCAxMy41NTU2TDEwLjUgMTAuODg4OVYxMC44ODg5WiIgZmlsbD0iIzAwMDAwMCIvPgo8L3N2Zz4K"
                       />
                     </strong>
                     <h3>{s.title}</h3>
                     <p>{s.desc}</p>
 
-                    <Link href={s.link} className="learn-link">
+                    <Link href={s.link} className="learn-link" aria-label={`Learn more about ${s.title}`}>
                       Learn More
                     </Link>
                   </div>
@@ -83,7 +86,7 @@ export default function Services({ services, offerings }: ServicesProps) {
             </div>
 
             {/* See All Services */}
-            <Link href="/service" className="see-btn">
+            <Link href="/service" className="see-btn" aria-label="See all services">
               See All Services
             </Link>
           </div>

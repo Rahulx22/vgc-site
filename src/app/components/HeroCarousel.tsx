@@ -19,12 +19,15 @@ export default function HeroCarousel({ hero }: { hero: Hero }) {
                 height={600} 
                 loading="eager" 
                 priority={idx === 0}
-                quality={85}
+                quality={75}
                 sizes="100vw"
                 style={{
                   width: '100%',
                   height: 'auto'
                 }}
+                // Add performance optimizations
+                placeholder="blur"
+                blurDataURL="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8/5+hHgAHggJ/PchI7wAAAABJRU5ErkJggg=="
               />
               <div className="carousel-caption">
                 <div className="container">

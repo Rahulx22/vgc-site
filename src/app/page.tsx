@@ -10,7 +10,7 @@ import * as NextCache from "next/cache";
 import { headers } from "next/headers";
 import type { Metadata } from "next";
 
-export const revalidate = 0;
+export const revalidate = 300; // Revalidate every 5 minutes
 export const dynamic = "force-dynamic";
 
 // Add dynamic metadata
@@ -18,6 +18,13 @@ export const metadata: Metadata = {
   title: "VGC Consulting - Business, Tax & Compliance Solutions",
   description: "VGC Consulting provides comprehensive business, tax, and compliance solutions tailored to empower MSMEs, corporates, and global ventures.",
   keywords: "business consulting, tax services, compliance services, MSME support, corporate advisory",
+  openGraph: {
+    title: "VGC Consulting - Business, Tax & Compliance Solutions",
+    description: "VGC Consulting provides comprehensive business, tax, and compliance solutions tailored to empower MSMEs, corporates, and global ventures.",
+    type: "website",
+    locale: "en_US",
+    url: "https://vgcsite.netlify.app",
+  },
 };
 
 const noStoreCompat =
@@ -171,7 +178,7 @@ export default async function Page() {
               <h3>{data.cta.topHeading}</h3>
               <h2>{data.cta.mainHeading}</h2>
               <p>{data.cta.subtext}</p>
-              <a href={data.cta.ctaLink}>{data.cta.ctaText}</a>
+              <a href={data.cta.ctaLink} aria-label={data.cta.ctaText}>{data.cta.ctaText}</a>
             </div>
           </div>
         </div>

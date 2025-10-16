@@ -8,7 +8,7 @@ export const IMAGE_BASE = "https://vgc.psofttechnologies.in/storage/builder/";
 /**
  * Fetch with timeout
  */
-export async function fetchWithTimeout(input: RequestInfo, init: RequestInit = {}, timeoutMs = 7000) {
+export async function fetchWithTimeout(input: RequestInfo, init: RequestInit = {}, timeoutMs = 5000) {
   const controller = new AbortController();
   const id = setTimeout(() => controller.abort(), timeoutMs);
   try {

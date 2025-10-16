@@ -56,11 +56,11 @@ export function waitForContentLoad(): Promise<void> {
     // Wait for document to be ready
     if (document.readyState === 'complete') {
       // Add small delay to ensure rendering is complete
-      setTimeout(resolve, 100);
+      setTimeout(resolve, 50);
     } else {
       window.addEventListener('load', () => {
         // Add small delay to ensure rendering is complete
-        setTimeout(resolve, 100);
+        setTimeout(resolve, 50);
       });
     }
   });
@@ -114,6 +114,6 @@ export function trackResourcePerformance(): void {
         duration: img.duration,
         startTime: img.startTime
       })));
-    }, 3000); // Wait for images to load
+    }, 2000); // Wait for images to load
   }
 }

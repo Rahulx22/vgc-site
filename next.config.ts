@@ -26,6 +26,8 @@ const nextConfig: NextConfig = {
   experimental: {
     optimizeCss: true, // Optimize CSS
     optimizePackageImports: [], // Optimize package imports
+    // Enable React compiler for better performance
+    reactCompiler: true,
   },
   // Configure caching headers
   async headers() {
@@ -36,6 +38,18 @@ const nextConfig: NextConfig = {
           {
             key: "Cache-Control",
             value: "public, max-age=0, must-revalidate, s-maxage=300", // 5 minutes shared cache
+          },
+          {
+            key: "X-Content-Type-Options",
+            value: "nosniff",
+          },
+          {
+            key: "X-Frame-Options",
+            value: "DENY",
+          },
+          {
+            key: "X-XSS-Protection",
+            value: "1; mode=block",
           },
         ],
       },
@@ -62,13 +76,34 @@ const nextConfig: NextConfig = {
             test: /[\\/]node_modules[\\/]/,
             name: 'vendors',
             chunks: 'all',
+            // Split vendor chunks more efficiently
+            maxSize: 244000, // 244KB max size per chunk
+          },
+          // Create separate chunk for jQuery and Bootstrap
+          jquery: {
+            test: /[\\/]node_modules[\\/](jquery)[\\/]/,
+            name: 'jquery',
+            chunks: 'all',
+            enforce: true,
+          },
+          bootstrap: {
+            test: /[\\/]node_modules[\\/](bootstrap|popperjs)[\\/]/,
+            name: 'bootstrap',
+            chunks: 'all',
+            enforce: true,
           },
         },
       },
+      // Minimize and optimize
+      minimize: true,
     };
     
     return config;
   },
+  // Enable compression
+  compress: true,
+  // Enable powered by header removal
+  poweredByHeader: false,
 };
 
 export default nextConfig;
