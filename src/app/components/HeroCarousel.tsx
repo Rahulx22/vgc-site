@@ -11,7 +11,21 @@ export default function HeroCarousel({ hero }: { hero: Hero }) {
         <div className="carousel-inner">
           {hero.banners.map((src, idx) => (
             <div key={idx} className={`carousel-item ${idx === 0 ? "active" : ""}`}>
-              <Image className="w-100" src={src} alt={`banner-${idx}`} width={1920} height={600} loading="lazy" />
+              <Image 
+                className="w-100" 
+                src={src} 
+                alt={`banner-${idx}`} 
+                width={1920} 
+                height={600} 
+                loading="eager" 
+                priority={idx === 0}
+                quality={85}
+                sizes="100vw"
+                style={{
+                  width: '100%',
+                  height: 'auto'
+                }}
+              />
               <div className="carousel-caption">
                 <div className="container">
                   <div className="row">
@@ -31,17 +45,10 @@ export default function HeroCarousel({ hero }: { hero: Hero }) {
 
                       <ul className="count-list">
                         {hero.counters.map((c, i) => (
-                          <li key={i}>
+                          <li key={i} data-aos="fade-up" data-aos-duration="1000" data-aos-delay={i * 200}>
                             <h2>
-                              {/* if we have numeric value, show value+suffix; else display */}
-                              {c.value !== null && c.value !== undefined ? (
-                                <>
-                                  <span className="counter-count">{c.value}</span>
-                                  <span>{c.suffix}</span>
-                                </>
-                              ) : (
-                                <span>{c.display}</span>
-                              )}
+                              <span className="counter-count">{c.value}</span>
+                              {c.suffix || (c.label.includes('Rate') ? '%' : '')}
                             </h2>
                             {c.label}
                           </li>

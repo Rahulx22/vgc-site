@@ -5,6 +5,7 @@ import AOSProvider from "./components/AOSProvider";
 import HeaderContainer from "./components/HeaderContainer";
 import FooterContainer from "./components/FooterContainer";
 import PerformanceMonitor from "./components/PerformanceMonitor";
+import GlobalLoader from "./components/GlobalLoader";
 import "./globals.css";
 
 import * as NextCache from "next/cache";
@@ -56,6 +57,10 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         <link rel="preconnect" href="https://cdnjs.cloudflare.com" />
         <link rel="preconnect" href="https://code.jquery.com" />
         
+        {/* Preload critical fonts */}
+        <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Lato:wght@100;300;400;700;900&display=swap" />
+        <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@100..700&display=swap" />
+        
         <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet" />
         <link href="https://fonts.googleapis.com/css2?family=Lato:wght@100;300;400;700;900&display=swap" rel="stylesheet" />
         <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@100..700&display=swap" rel="stylesheet" />
@@ -66,6 +71,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         <link href="/images/fav.webp" rel="icon" />
       </head>
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
+        <GlobalLoader />
         <AOSProvider>
           <HeaderContainer initial={settings} />
           {children}

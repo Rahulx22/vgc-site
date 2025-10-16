@@ -76,9 +76,14 @@ export default function AboutSection({
               alt={imageAlt} 
               width={700} 
               height={400} 
-              loading="lazy"
+              loading="eager"
+              quality={85}
               unoptimized
               onError={handleImageError}
+              style={{
+                width: '100%',
+                height: 'auto'
+              }}
             />
           </div>
         </div>

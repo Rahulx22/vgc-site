@@ -7,11 +7,17 @@ export type Banner = {
   subtitle?: string | null;
 };
 
+export type HeroCounter = {
+  label: string;
+  value: string;
+  suffix?: string;
+};
+
 export type Hero = {
   title: string;
   paragraphs: string[];
   phone: string;
-  counters: { label: string; value: string }[];
+  counters: HeroCounter[];
   banners: string[]; // absolute URLs
 };
 

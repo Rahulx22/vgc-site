@@ -55,7 +55,7 @@ export default function Services({ services, offerings }: ServicesProps) {
             </h2>
             <div className="row">
               {services.map((s) => (
-                <div key={s.id || s.title} className="col-lg-6 col-md-6">
+                <div key={s.title} className="col-lg-6 col-md-6">
                   <div
                     className="serv-box"
                     data-aos="zoom-in"
@@ -67,7 +67,8 @@ export default function Services({ services, offerings }: ServicesProps) {
                         alt="check"
                         width={20}
                         height={20}
-                        loading="lazy"
+                        loading="eager"
+                        quality={90}
                       />
                     </strong>
                     <h3>{s.title}</h3>

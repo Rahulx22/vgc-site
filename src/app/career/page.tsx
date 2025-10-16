@@ -482,7 +482,12 @@ export default function CareerPage() {
                 alt="career-banner" 
                 width={800} 
                 height={600} 
-                loading="lazy" 
+                loading="eager"
+                quality={85}
+                style={{
+                  width: '100%',
+                  height: 'auto'
+                }}
               />
             </div>
           </div>
@@ -659,7 +664,7 @@ export default function CareerPage() {
             </div>
             
             <div className="col-xl-12 col-lg-12 col-md-12">
-              <Image className="filter-img" src="/images/filter.png" alt="filter" width={1200} height={200} />
+              <Image className="filter-img" src="/images/filter.png" alt="filter" width={1200} height={200} loading="eager" quality={80} />
             </div>
             
             <div className="col-xl-6 col-lg-6 col-md-12">

@@ -290,8 +290,12 @@ export default function ServicePage() {
               data-aos="fade-right"
               data-aos-duration="1200"
             >
-              <h1>{banner.title}</h1>
-              <p>{banner.description}</p>
+              <h1 style={{ minHeight: '100px', display: 'flex', alignItems: 'center' }}>
+                {banner.title}
+              </h1>
+              <p style={{ minHeight: '120px', display: 'flex', alignItems: 'center' }}>
+                {banner.description}
+              </p>
             </div>
           </div>
         </div>

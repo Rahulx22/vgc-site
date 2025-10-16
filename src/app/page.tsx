@@ -46,7 +46,7 @@ function mapApiToHomeDataStrict(apiJson: any): HomeData {
   const counters = countersRaw
     .map((s: any) => {
       const { value, suffix, display } = splitCount(s?.count_percent);
-      return { label: String(s?.text ?? "").trim(), value, suffix, display };
+      return { label: String(s?.text ?? "").trim(), value: value !== null ? String(value) : "", suffix, display };
     })
     .filter((c: any) => c.label && (c.value !== null || c.display));
 
