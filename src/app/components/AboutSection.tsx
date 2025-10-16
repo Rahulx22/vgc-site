@@ -1,4 +1,7 @@
+"use client";
+
 import Image from "next/image";
+import { useState } from "react";
 
 interface AboutSectionProps {
   title: string;
@@ -25,6 +28,16 @@ export default function AboutSection({
   ctaText,
   ctaLink
 }: AboutSectionProps) {
+  const [imgSrc, setImgSrc] = useState(image);
+  const [hasError, setHasError] = useState(false);
+
+  const handleImageError = () => {
+    if (!hasError) {
+      setHasError(true);
+      setImgSrc("/images/about-img.webp");
+    }
+  };
+
   return (
     <div className={`about-sec ${className}`}>
       <div className="container">
@@ -59,12 +72,13 @@ export default function AboutSection({
           >
             <Image 
               className="w-100" 
-              src={image} 
+              src={imgSrc} 
               alt={imageAlt} 
               width={700} 
               height={400} 
               loading="lazy"
               unoptimized
+              onError={handleImageError}
             />
           </div>
         </div>

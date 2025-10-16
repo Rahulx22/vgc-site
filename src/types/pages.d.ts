@@ -163,6 +163,7 @@ export interface CareerJob {
   status: string;
   created_at: string;
   updated_at: string;
+  job_description_doc?: string; // Add this line for PDF document URL
 }
 
 export interface CareerSection {

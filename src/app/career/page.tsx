@@ -200,6 +200,9 @@ export default function CareerPage() {
           throw new Error('Career page not found in API response');
         }
         
+        // Debug log to see the career page data
+        console.log('Career page data:', careerPage);
+        
         setCareerData(careerPage);
       } catch (err) {
         console.error('Error fetching career data:', err);
@@ -330,6 +333,70 @@ export default function CareerPage() {
 
   const headerData = headerBlock.data;
   const sectionData = sectionBlock.data;
+
+  // Function to handle PDF download for a job
+  const handleJobPdfDownload = (job: CareerJob) => {
+    // Debug log to see the job data
+    console.log('Job data for PDF download:', job);
+    
+    // Check if job has a PDF document URL
+    if (job.job_description_doc) {
+      // Construct the full URL for the PDF using the correct path
+      const baseUrl = 'https://vgc.psofttechnologies.in';
+      const cleanPath = job.job_description_doc.replace(/^\/+/, ''); // Remove leading slashes
+      const pdfUrl = `${baseUrl}/storage/${cleanPath}`;
+      
+      // Debug log to see the final URL
+      console.log('Final PDF URL:', pdfUrl);
+      
+      // Check if the URL looks correct
+      if (pdfUrl.endsWith('.pdf')) {
+        // Try to open the PDF in a new tab
+        const newWindow = window.open(pdfUrl, '_blank');
+        
+        // If popup blocking prevents opening, provide a fallback
+        if (!newWindow) {
+          // Create a temporary link and trigger download
+          const a = document.createElement('a');
+          a.href = pdfUrl;
+          a.target = '_blank';
+          a.download = job.title.replace(/\s+/g, '_') + '_description.pdf';
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+        }
+      } else {
+        console.error('PDF URL does not end with .pdf:', pdfUrl);
+        alert('Invalid PDF URL. Please contact support.');
+      }
+    } else {
+      console.log('No PDF document found for job:', job.title);
+      // Fallback: create a simple text file if no PDF is available
+      const jobContent = `
+Job Title: ${job.title}
+
+Description:
+${job.long_description || 'No description available'}
+
+Roles:
+${job.roles || 'No roles specified'}
+      `.trim();
+
+      const blob = new Blob([jobContent], { type: 'text/plain' });
+      const url = URL.createObjectURL(blob);
+      
+      // Create a temporary link and trigger download
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${job.title.replace(/\s+/g, '_')}_description.txt`;
+      document.body.appendChild(a);
+      a.click();
+      
+      // Clean up
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    }
+  };
 
   return (
     <>     
@@ -569,13 +636,22 @@ export default function CareerPage() {
                       return getOrder(a.title) - getOrder(b.title);
                     })
                     .map((job, index) => {
+                      // Debug log to see each job data
+                      console.log(`Job ${job.id}:`, job);
+                      
                       const parsedJob = parseJobDescription(job.long_description);
                       console.log(`Job ${job.title}:`, parsedJob); // Debug log
                       return (
-                        <div key={job.id}>
+                        <div key={job.id} id={`job-${job.id}`}>
                           <h4>
                             {job.title} 
-                            <a className="call-btn" href={`#job-${job.id}`}>Learn More</a>
+                            <button 
+                              className="call-btn" 
+                              onClick={() => handleJobPdfDownload(job)}
+                              style={{ marginLeft: '10px', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--main-color)' }}
+                            >
+                              {job.job_description_doc ? 'Download PDF' : 'Download Details'}
+                            </button>
                           </h4>
                           {parsedJob.responsibilities.length > 0 && (
                             <>
