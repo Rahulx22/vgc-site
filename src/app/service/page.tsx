@@ -255,6 +255,7 @@ export default function ServicePage() {
     const items =
       block?.data?.services
         ?.filter(s => s.status === 'active' || s.status === 'Active' || s.status === 'ACTIVE')
+        // No limit here - show all services
         ?.map((s) => {
           const txt =
             toPlainText(s.short_description) ||

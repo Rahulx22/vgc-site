@@ -46,7 +46,7 @@ function mapApiToHomeDataStrict(apiJson: any): HomeData {
   const counters = countersRaw
     .map((s: any) => {
       const { value, suffix, display } = splitCount(s?.count_percent);
-      return { label: String(s?.text ?? "").trim(), value: value !== null ? String(value) : "", suffix, display };
+      return { label: String(s?.text ?? "").trim(), value, suffix, display };
     })
     .filter((c: any) => c.label && (c.value !== null || c.display));
 
@@ -66,6 +66,8 @@ function mapApiToHomeDataStrict(apiJson: any): HomeData {
   const servicesBlock = blocks.find((b: any) => b.type === "services_section");
   const services = (servicesBlock?.data?.services || [])
     .filter((s: any) => !s.status || s.status === 'active' || s.status === 'Active' || s.status === 'ACTIVE')
+    // Limit to 4 services on homepage only
+    .slice(0, 4)
     .map((s: any) => ({
       title: s.title || "",
       desc: stripHtml(s.short_description || s.long_description || ""),
