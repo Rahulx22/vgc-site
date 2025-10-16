@@ -422,11 +422,13 @@ export default function ServicePage() {
               <h2>{founderNote.title}</h2>
               <p>{founderNote.description}</p>
               <div style={{ margin: "14px 0" }}>
-                <img
+                <Image
                   src={founderNote.signature || "/images/sign.svg"}
                   alt="sign"
                   width={100}
                   height={30}
+                  loading="eager"
+                  quality={85}
                 />
               </div>
               <p>{founderNote.name}</p>

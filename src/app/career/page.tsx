@@ -637,7 +637,15 @@ export default function CareerPage() {
                           <div className="mt-2">
                             <small>Selected file: {resume?.name}</small>
                             {resume?.type.startsWith('image/') && (
-                              <img src={resumePreview} alt="Resume preview" style={{ maxWidth: '200px', maxHeight: '200px' }} />
+                              <Image 
+                                src={resumePreview} 
+                                alt="Resume preview" 
+                                width={200} 
+                                height={200}
+                                loading="lazy"
+                                quality={70}
+                                style={{ maxWidth: '200px', maxHeight: '200px' }}
+                              />
                             )}
                           </div>
                         )}
