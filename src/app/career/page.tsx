@@ -175,6 +175,7 @@ export default function CareerPage() {
   const [submitting, setSubmitting] = useState(false);
   const [submitSuccess, setSubmitSuccess] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
+  const [selectedRole, setSelectedRole] = useState<string>('All'); // Add state for role filter
 
   const [formData, setFormData] = useState({
     firstName: "",
@@ -397,6 +398,61 @@ export default function CareerPage() {
     job.status === 'active' || job.status === 'Active' || job.status === 'ACTIVE'
   ) || [];
 
+  // Get unique responsibilities from all jobs to create filter options
+  const getUniqueResponsibilities = () => {
+    const responsibilitiesSet = new Set<string>();
+    responsibilitiesSet.add('All'); // Add 'All' option
+    
+    activeJobs.forEach(job => {
+      const parsedJob = parseJobDescription(job.long_description);
+      parsedJob.responsibilities.forEach(resp => {
+        // Extract key responsibility categories from the responsibility text
+        const lowerResp = resp.toLowerCase();
+        if (lowerResp.includes('manage') || lowerResp.includes('lead') || lowerResp.includes('supervis')) {
+          responsibilitiesSet.add('Management');
+        } else if (lowerResp.includes('develop') || lowerResp.includes('code') || lowerResp.includes('program')) {
+          responsibilitiesSet.add('Development');
+        } else if (lowerResp.includes('design') || lowerResp.includes('ui') || lowerResp.includes('ux')) {
+          responsibilitiesSet.add('Design');
+        } else if (lowerResp.includes('analy') || lowerResp.includes('data') || lowerResp.includes('report')) {
+          responsibilitiesSet.add('Analysis');
+        } else if (lowerResp.includes('support') || lowerResp.includes('help') || lowerResp.includes('assist')) {
+          responsibilitiesSet.add('Support');
+        } else if (lowerResp.includes('finance') || lowerResp.includes('account') || lowerResp.includes('tax')) {
+          responsibilitiesSet.add('Finance');
+        } else {
+          responsibilitiesSet.add('Other');
+        }
+      });
+    });
+    
+    return Array.from(responsibilitiesSet);
+  };
+
+  // Filter jobs based on selected responsibility
+  const filteredJobs = selectedRole === 'All' ? activeJobs : activeJobs.filter(job => {
+    const parsedJob = parseJobDescription(job.long_description);
+    return parsedJob.responsibilities.some(resp => {
+      const lowerResp = resp.toLowerCase();
+      switch (selectedRole) {
+        case 'Management':
+          return lowerResp.includes('manage') || lowerResp.includes('lead') || lowerResp.includes('supervis');
+        case 'Development':
+          return lowerResp.includes('develop') || lowerResp.includes('code') || lowerResp.includes('program');
+        case 'Design':
+          return lowerResp.includes('design') || lowerResp.includes('ui') || lowerResp.includes('ux');
+        case 'Analysis':
+          return lowerResp.includes('analy') || lowerResp.includes('data') || lowerResp.includes('report');
+        case 'Support':
+          return lowerResp.includes('support') || lowerResp.includes('help') || lowerResp.includes('assist');
+        case 'Finance':
+          return lowerResp.includes('finance') || lowerResp.includes('account') || lowerResp.includes('tax');
+        default:
+          return false;
+      }
+    });
+  });
+
   return (
     <>     
       <div className="business-banner dd">
@@ -600,6 +656,19 @@ export default function CareerPage() {
                   />
                 </form>
               </div>
+            </div>
+            
+            <div className="col-xl-12 col-lg-12 col-md-12">
+              <Image className="filter-img" src="/images/filter.png" alt="filter" width={1200} height={200} />
+            </div>
+            
+            <div className="col-xl-6 col-lg-6 col-md-12">
+              {sectionData.left_section.map((section, index) => (
+                <div key={index} className="career-box career-box-top-spacing">
+                  <h3>{section.title}</h3>
+                  <div dangerouslySetInnerHTML={{ __html: section.description }} />
+                </div>
+              ))}
             </div>
             
             <div className="col-xl-6 col-lg-6 col-md-12">

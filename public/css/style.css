@@ -98,6 +98,23 @@ header .dropdown-menu li:last-child a { border-bottom:none; }
 .client-sec img { height:80px; }
 .client-sec .col-lg-2:last-child { border-right:none; }
 
+/******************** blog page CSS ********************/
+.inner-banner::before { background-color:rgba(0,0,0,0.5); bottom:0; content:''; left:0; position:absolute; right:0; top:0; }
+.inner-banner img { height:400px; width: 100%; object-fit: cover; }
+.inner-txt { align-items:center; bottom:0; display:flex; flex-direction:column; justify-content:center; left:0; padding:0 12px; position:absolute; right:0; text-align:center; top:0; }
+.inner-txt h1 { color:#fff; font-size:55px; font-weight:600; margin:0 0 12px; }
+.inner-txt .breadcrumb { font-size:20px; font-weight:600; margin:0; }
+.inner-banner .breadcrumb-item a, .inner-banner .breadcrumb-item::before, .inner-banner .breadcrumb-item.active { color:#fff; }
+
+.team-sec { background-color:#eff7fc; padding:80px 0 55px; text-align:center; }
+.team-sec h2 { color:var(--main-color); font-size:55px; font-weight:600; margin:0 0 75px; }
+.team-sec h3 { color:#000B14; font-size:18px; font-weight:700; margin:22px 0 10px; }
+.team-sec img { border:5px solid #fff; border-radius:50%; box-shadow:0 4px 10px 4px #00000040; height:220px; margin:0 auto; width:220px; object-fit: cover; }
+.team-sec a { color:var(--main-color-2); display:inline-block; font-size:16px; font-weight:600; }
+.team-info .close { background-color:transparent; border:none; border-radius:50%; color:#000; font-size:35px; font-weight:500; position:absolute; right:24px; top:0; z-index:1; }
+.team-info .modal-content { border:none; border-radius:0; padding:45px 50px 25px; text-align:left; }
+.team-info h4 { color:var(--main-color); font-size:26px; margin:0 0 14px; }
+
 /******************** about-us page CSS ********************/
 .about-sec { overflow:hidden; padding:80px 0; }
 .about-sec .col-lg-6:first-child { padding:45px 35px 45px 12px; }
@@ -245,6 +262,7 @@ footer .call-btn { margin:20px 0 0; }
   overflow-y: auto;
   padding-right: 10px;
   margin-right: -10px;
+  scroll-behavior: smooth;
 }
 
 .job-listings-scroll::-webkit-scrollbar {
@@ -263,6 +281,19 @@ footer .call-btn { margin:20px 0 0; }
 
 .job-listings-scroll::-webkit-scrollbar-thumb:hover {
   background: #a8a8a8;
+}
+
+/* Responsive adjustments for job listings scroll container */
+@media (max-width: 767.98px) {
+  .job-listings-scroll {
+    max-height: 300px;
+  }
+}
+
+@media (min-width: 768px) and (max-width: 991.98px) {
+  .job-listings-scroll {
+    max-height: 350px;
+  }
 }
 
 /*.................. Home-Page-Media .................. */
@@ -731,21 +762,3 @@ header .navbar .dropdown i, .mob-logo { display:none; }
   }
   .client-sec p { font-size: 14px; margin-bottom: 28px; }
 }
-
-/******************** blog page CSS ********************/
-.inner-banner::before { background-color:rgba(0,0,0,0.5); bottom:0; content:''; left:0; position:absolute; right:0; top:0; }
-.inner-banner { margin:84px 0 0; position:relative; }
-.inner-banner img { height:400px; width: 100%; object-fit: cover; }
-.inner-txt { align-items:center; bottom:0; display:flex; flex-direction:column; justify-content:center; left:0; padding:0 12px; position:absolute; right:0; text-align:center; top:0; }
-.inner-txt h1 { color:#fff; font-size:55px; font-weight:600; margin:0 0 12px; }
-.inner-txt .breadcrumb { font-size:20px; font-weight:600; margin:0; }
-.inner-banner .breadcrumb-item a, .inner-banner .breadcrumb-item::before, .inner-banner .breadcrumb-item.active { color:#fff; }
-
-.team-sec { background-color:#eff7fc; padding:80px 0 55px; text-align:center; }
-.team-sec h2 { color:var(--main-color); font-size:55px; font-weight:600; margin:0 0 75px; }
-.team-sec h3 { color:#000B14; font-size:18px; font-weight:700; margin:22px 0 10px; }
-.team-sec img { border:5px solid #fff; border-radius:50%; box-shadow:0 4px 10px 4px #00000040; height:220px; margin:0 auto; width:220px; object-fit: cover; }
-.team-sec a { color:var(--main-color-2); display:inline-block; font-size:16px; font-weight:600; }
-.team-info .close { background-color:transparent; border:none; border-radius:50%; color:#000; font-size:35px; font-weight:500; position:absolute; right:24px; top:0; z-index:1; }
-.team-info .modal-content { border:none; border-radius:0; padding:45px 50px 25px; text-align:left; }
-.team-info h4 { color:var(--main-color); font-size:26px; margin:0 0 14px; }
