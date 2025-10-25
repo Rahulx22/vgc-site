@@ -221,8 +221,8 @@ export default function Header({ data }: HeaderProps) {
               </div>
             </nav>
 
-            {/* CTA Button */}
-            <div style={{ marginLeft: 20 }}>
+            {/* CTA Button - Hidden on mobile */}
+            <div style={{ marginLeft: 20 }} className="d-none d-md-block">
               <Link href={buttonHref} className="cont-btn" aria-label={buttonText}>
                 {buttonText}
               </Link>
@@ -256,6 +256,11 @@ export default function Header({ data }: HeaderProps) {
                 </li>
               );
             })}
+            <li className="mobile-cta-button" style={{ borderTop: "1px solid #eef0f2", marginTop: "15px", paddingTop: "15px", paddingBottom: "10px" }}>
+              <Link href={buttonHref} onClick={closeMenu} className="mobile-cta-link">
+                {buttonText}
+              </Link>
+            </li>
           </ul>
         </nav>
       </div>

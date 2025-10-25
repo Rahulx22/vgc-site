@@ -14,6 +14,7 @@ import { headers } from "next/headers";
 export const metadata: Metadata = {
   title: "VGC Consulting - Business, Tax & Compliance Solutions",
   description: "VGC Consulting provides comprehensive business, tax, and compliance solutions tailored to empower MSMEs, corporates, and global ventures.",
+  viewport: "width=device-width, initial-scale=1, maximum-scale=5",
 };
 
 export const revalidate = 0;
@@ -46,8 +47,9 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   const settings = await fetchSettingsOnce();
 
   return (
-    <html lang="en">
+      <html lang="en">
       <head>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0" />
         {/* Preconnect to external domains for faster loading */}
         <link rel="preconnect" href="https://vgc.psofttechnologies.in" />
         <link rel="preconnect" href="https://unpkg.com" />
